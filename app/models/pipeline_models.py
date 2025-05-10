@@ -30,6 +30,7 @@ class PipelineRunBase(SQLModel):
 class PipelineRun(PipelineRunBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     run_uuid: uuid.UUID = Field(default_factory=uuid.uuid4, index=True, nullable=False, unique=True)
+    celery_task_id: Optional[str] = Field(default=None, index=True)
     created_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
     updated_at: datetime = Field(default_factory=datetime.utcnow, nullable=False) # Need to auto-update this
 
@@ -42,6 +43,7 @@ class PipelineRunCreate(PipelineRunBase):
 class PipelineRunRead(PipelineRunBase):
     id: int
     run_uuid: uuid.UUID
+    celery_task_id: Optional[str]
     created_at: datetime
     updated_at: datetime
 

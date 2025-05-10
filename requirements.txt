@@ -4,4 +4,9 @@ sqlmodel
 pydantic-settings
 pypdf
 sumy
-nltk 
+nltk
+reportlab
+celery
+redis
+python-multipart
+numpy 

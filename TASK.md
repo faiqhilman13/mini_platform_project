@@ -83,13 +83,15 @@
         - [x] Implement PDF parsing (using `pypdf`).
         - [x] Implement summarization logic (using `sumy` with LSA).
         - [x] Define input (PDF path) and output (summary dict with status).
-    - [ ] **P1.5: Job Queue Setup (Celery + Redis or RQ)**
-        - [ ] Integrate Celery with Redis (or RQ). Configure backend to dispatch summarizer task to queue.
-        - [ ] Create a Celery task for the PDF summarizer.
-        - [ ] Update `pipeline_run` status (Queued, Processing, Success, Failed).
-    - [ ] **P1.6: Pipeline Trigger & Status API**
-        - [ ] Create `app/routers/pipelines.py` with `/pipelines/trigger` and `/pipelines/{run_id}/status` endpoints.
-        - [ ] `app/services/pipeline_service.py` to create `pipeline_run` record, dispatch job.
+    - [x] **P1.5: Job Queue Setup (Celery + Redis or RQ)** (2024-07-26, Completed 2024-07-29)
+        - [x] Integrate Celery with Redis. Configured `celery_app.py`, `config.py`, `requirements.txt`.
+        - [x] Create a Celery task for PDF summarizer (`summarization_tasks.py`).
+        - [x] Task updates `PipelineRun` status (QUEUED, PROCESSING, COMPLETED, FAILED) and stores Celery task ID.
+        - [x] Debugging Celery task execution and argument passing. (2024-07-29)
+    - [x] **P1.6: Pipeline Trigger & Status API** (Completed 2024-07-29)
+        - [x] Create `app/routers/pipelines.py` with `/pipelines/trigger` and `/pipelines/{run_id}/status` endpoints.
+        - [x] `app/services/pipeline_service.py` to create `pipeline_run` record, dispatch job.
+        - [x] Correcting Celery task dispatch from `pipeline_service.py`. (2024-07-29)
     - [ ] **P1.7: Basic UI (Streamlit)**
         - [ ] Create `frontend/app.py` (Streamlit).
         - [ ] UI to upload a PDF.
@@ -135,4 +137,26 @@
         - [ ] Better job monitoring table/view.
         - [ ] Consistent styling.
     - [ ] **P3.2: JWT Authentication**
-        - [ ] Implement token-based auth (e.g., `
+        - [ ] Implement token-based auth (e.g., `FastAPI-Users` or custom).
+
+### Discovered During Work (2024-07-29)
+- **Celery Task `AttributeError: 'str' object has no attribute 'hex'` (P1.5):** 
+    - Problem: `run_uuid` (string) was used directly in SQLModel query within Celery task, expecting a `UUID` object.
+    - Fix: Converted `run_uuid_str` to `uuid.UUID` object in `summarization_tasks.py` before querying.
+- **Uvicorn Reload Issues (P1.5):**
+    - Problem: Uvicorn failed to reload `summarization_tasks.py` correctly, citing `IndentationError` and `AttributeError` even after fixes were applied.
+    - Fix: Full stop/start of Uvicorn server (without `--reload` initially) seemed to resolve. Potentially an issue with `WatchFiles` or caching.
+- **Celery Task Dispatch Argument Mismatch (P1.5 & P1.6):**
+    - Problem: `pipeline_service.py` called `summarize_pdf_task.delay()` with an unexpected keyword argument `pipeline_run_uuid` and was missing other required arguments.
+    - Current Fix (Applied 2024-07-29): Corrected the arguments in `pipeline_service.py` to match the task signature (`run_uuid_str`, `uploaded_file_log_id`, `file_path`, `original_filename`).
+- **Celery Prerun Signal Argument Handling (P1.5):**
+    - Problem: `task_prerun` signal handler in `summarization_tasks.py` was not correctly extracting `run_uuid` when task was called with positional vs. keyword arguments.
+    - Fix (Applied 2024-07-29): Updated signal handler to robustly check `args` and `kwargs` from the signal for the `run_uuid`.
+- **Missing Table Metadata in Celery Worker (P1.5):**
+    - Problem: `summarization_tasks.py` was missing an import for `UploadedFileLog`, causing `sqlalchemy.exc.NoReferencedTableError` in Celery worker context.
+    - Fix (Applied 2024-07-29): Added `from app.models.file_models import UploadedFileLog` to `summarization_tasks.py`.
+- **Missing NumPy Dependency for Sumy LSA (P1.4 & P1.5):**
+    - Problem: `sumy.summarizers.lsa` requires `numpy`, which was not in `requirements.txt`.
+    - Fix (Applied 2024-07-29): Added `numpy` to `requirements.txt`.
+
+---
