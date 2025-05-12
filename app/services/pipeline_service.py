@@ -8,7 +8,7 @@ from app.models.pipeline_models import (
 from app.models.file_models import UploadedFileLog
 from app.tasks.summarization_tasks import summarize_pdf_task # Import the Celery task
 from fastapi import HTTPException, Depends
-from datetime import datetime
+from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
 
@@ -45,9 +45,10 @@ async def create_and_dispatch_summary_pipeline(
         if not pdf_path:
              db_pipeline_run.status = PipelineRunStatus.FAILED
              db_pipeline_run.error_message = "PDF path not found in UploadedFileLog."
-             db_pipeline_run.updated_at = datetime.utcnow()
+             db_pipeline_run.updated_at = datetime.now(timezone.utc)
              db.add(db_pipeline_run)
              db.commit()
+             # No refresh here, as we are raising immediately
              raise HTTPException(status_code=500, detail="PDF path not found for dispatching task.")
 
         task_result = summarize_pdf_task.delay(
@@ -59,18 +60,20 @@ async def create_and_dispatch_summary_pipeline(
         
         # 4. Store Celery task ID
         db_pipeline_run.celery_task_id = task_result.id
-        db_pipeline_run.updated_at = datetime.utcnow() # Update timestamp after getting task_id
+        db_pipeline_run.updated_at = datetime.now(timezone.utc) # Update timestamp after getting task_id
         db.add(db_pipeline_run)
         db.commit()
         db.refresh(db_pipeline_run)
         logger.info(f"Dispatched Celery task {task_result.id} for PipelineRun {db_pipeline_run.run_uuid}.")
         
+    except HTTPException as he: # Specifically catch and re-raise HTTPExceptions
+        raise he
     except Exception as e:
         logger.error(f"Failed to dispatch Celery task for PipelineRun {db_pipeline_run.run_uuid}: {e}")
         # Update PipelineRun to FAILED status if dispatch fails
         db_pipeline_run.status = PipelineRunStatus.FAILED
         db_pipeline_run.error_message = f"Failed to dispatch Celery task: {str(e)}"
-        db_pipeline_run.updated_at = datetime.utcnow()
+        db_pipeline_run.updated_at = datetime.now(timezone.utc)
         db.add(db_pipeline_run)
         db.commit()
         db.refresh(db_pipeline_run)

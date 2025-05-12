@@ -1,7 +1,7 @@
 from sqlmodel import SQLModel, Field, Relationship
 from typing import Optional, List
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 # Forward reference for PipelineRun
 # from .pipeline_models import PipelineRun # Assuming PipelineRun is in pipeline_models.py
@@ -23,7 +23,7 @@ class UploadedFileLogBase(SQLModel):
 class UploadedFileLog(UploadedFileLogBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     file_uuid: uuid.UUID = Field(default_factory=uuid.uuid4, index=True, nullable=False, unique=True)
-    upload_timestamp: datetime = Field(default_factory=datetime.utcnow, nullable=False)
+    upload_timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
 
     # Relationship to PipelineRun (defined in pipeline_models.py)
     # pipeline_runs: List["PipelineRun"] = Relationship(back_populates="file_log")

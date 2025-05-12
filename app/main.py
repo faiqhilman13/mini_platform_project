@@ -3,16 +3,28 @@
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager # Import asynccontextmanager
 
 from app.core.config import settings # Ensure settings is imported if not already
 from app.routers import upload # Import the new router
 from app.routers import pipelines as pipelines_router # Import the new pipeline router
 from app.db.session import create_db_and_tables # Import the function
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Code to run on startup
+    print("INFO:     Creating database and tables...")
+    create_db_and_tables()
+    print("INFO:     Database and tables created (if they didn't exist).")
+    yield
+    # Code to run on shutdown (if any)
+    print("INFO:     Application shutting down...")
+
 app = FastAPI(
     title=settings.APP_NAME, # Use app name from settings
     version="0.1.0",
-    description="API for the Internal Developer Platform for AI Workflows"
+    description="API for the Internal Developer Platform for AI Workflows",
+    lifespan=lifespan # Use the lifespan context manager
 )
 
 # CORS Middleware (for development)
@@ -25,13 +37,12 @@ app.add_middleware(
     allow_headers=["*"],  # Allows all headers
 )
 
-# Create database tables on startup
+# Create database tables on startup - REMOVED @app.on_event("startup")
 # In a more complex setup, you might use Alembic for migrations.
-@app.on_event("startup")
-def on_startup():
-    print("INFO:     Creating database and tables...")
-    create_db_and_tables()
-    print("INFO:     Database and tables created (if they didn't exist).")
+# def on_startup():
+#     print("INFO:     Creating database and tables...")
+#     create_db_and_tables()
+#     print("INFO:     Database and tables created (if they didn't exist).")
 
 @app.get("/health", tags=["Health Check"])
 async def health_check():

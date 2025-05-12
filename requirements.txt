@@ -9,4 +9,10 @@ reportlab
 celery
 redis
 python-multipart
-numpy 
+numpy
+
+# Testing libraries
+pytest
+pytest-asyncio
+respx
+httpx 

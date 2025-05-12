@@ -2,7 +2,7 @@ from sqlmodel import SQLModel, Field, Relationship
 from typing import Optional, List
 from enum import Enum
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 # Forward reference for UploadedFileLog if it's in a different module or defined later
 # from .file_models import UploadedFileLog # Assuming UploadedFileLog will be in file_models.py
@@ -31,8 +31,8 @@ class PipelineRun(PipelineRunBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     run_uuid: uuid.UUID = Field(default_factory=uuid.uuid4, index=True, nullable=False, unique=True)
     celery_task_id: Optional[str] = Field(default=None, index=True)
-    created_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
-    updated_at: datetime = Field(default_factory=datetime.utcnow, nullable=False) # Need to auto-update this
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False) # Need to auto-update this
 
     # Relationship to UploadedFileLog (defined in file_models.py)
     # file_log: Optional["UploadedFileLog"] = Relationship(back_populates="pipeline_runs")
@@ -51,4 +51,4 @@ class PipelineRunUpdate(SQLModel):
     status: Optional[PipelineRunStatus] = None
     output_reference: Optional[str] = None
     error_message: Optional[str] = None
-    updated_at: datetime = Field(default_factory=datetime.utcnow) 
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc)) 

@@ -92,14 +92,25 @@
         - [x] Create `app/routers/pipelines.py` with `/pipelines/trigger` and `/pipelines/{run_id}/status` endpoints.
         - [x] `app/services/pipeline_service.py` to create `pipeline_run` record, dispatch job.
         - [x] Correcting Celery task dispatch from `pipeline_service.py`. (2024-07-29)
-    - [ ] **P1.7: Basic UI (Streamlit)**
-        - [ ] Create `frontend/app.py` (Streamlit).
-        - [ ] UI to upload a PDF.
-        - [ ] UI to trigger summarizer pipeline for uploaded PDF.
-        - [ ] UI to display job status and summary result.
-    - [ ] **P1.8: Unit Tests for Core Components**
-        - [ ] Tests for file upload service, pipeline trigger.
-        - [ ] Test for summarizer (mocking external calls).
+    - [x] **P1.7: Basic UI (React)** (Completed 2024-07-30)
+        - [x] Initialize React app using Vite (`frontend/`). (2024-07-30)
+        - [x] Scaffold folder structure (`components`, `pages`, `services`). (2024-07-30)
+        - [x] Implement `FileUpload.jsx` component. (2024-07-30)
+        - [x] Implement `UploadPage.jsx` page. (2024-07-30)
+        - [x] Implement `api.js` service for upload. (2024-07-30)
+        - [x] Setup basic routing with React Router for UploadPage. (2024-07-30)
+        - [x] Debug initial rendering of the React app. (2024-07-30)
+        - [x] Test PDF upload via React UI to backend successfully. (2024-07-30)
+        - [x] UI to trigger summarizer pipeline for uploaded PDF. (2024-07-31)
+        - [x] UI to display job status and summary result. (2024-07-31)
+    - [x] **P1.8: Unit Tests for Core Components** (Completed 2024-07-31)
+        - [x] Tests for file upload service (`app/services/file_service.py`).
+        - [x] Tests for pipeline service (`app/services/pipeline_service.py`).
+        - [x] Tests for upload router (`app/routers/upload.py`).
+        - [x] Tests for pipelines router (`app/routers/pipelines.py`).
+        - [x] Tests for PDF summarizer workflow logic (`workflows/pipelines/summarizer.py`).
+        - [x] Tests for Celery summarization task and signals (`app/tasks/summarization_tasks.py`).
+        - [x] All tests passing after debugging (2024-07-31).
 
 **Phase 2: Workflow Orchestration & Additional Pipelines**
   - **Goal:** Integrate a workflow orchestrator, add RAG and Text Classifier pipelines.
@@ -160,3 +171,13 @@
     - Fix (Applied 2024-07-29): Added `numpy` to `requirements.txt`.
 
 ---
+
+**Phase X: Future Enhancements**
+  - **Goal:** Extend platform capabilities with additional pipeline types and features based on evolving needs.
+  - **Tasks:**
+    - [ ] **PX.1: Data Analysis & Visualization Pipeline**
+        - [ ] Design pipeline for processing tabular data (e.g., CSV, JSON).
+        - [ ] Allow users to upload data and potentially scripts or select predefined analyses.
+        - [ ] Implement logic using libraries like Pandas, Matplotlib, Seaborn.
+        - [ ] Define output formats (e.g., generated plots, statistical summaries, processed data files).
+        - [ ] Integrate with orchestrator and UI.

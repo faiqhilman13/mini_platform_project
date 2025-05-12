@@ -1,6 +1,6 @@
 import logging
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from uuid import UUID as PyUUID # Added import and alias
 from sqlmodel import Session, select
 from app.core.celery_app import celery_app
@@ -43,7 +43,7 @@ def summarize_pdf_task(self, run_uuid_str: str, uploaded_file_log_id: int, file_
             # Update status to PROCESSING (if not already updated by task_prerun signal)
             if db_pipeline_run.status != PipelineRunStatus.PROCESSING:
                 db_pipeline_run.status = PipelineRunStatus.PROCESSING
-                db_pipeline_run.updated_at = datetime.utcnow()
+                db_pipeline_run.updated_at = datetime.now(timezone.utc)
                 db_session.add(db_pipeline_run)
                 db_session.commit()
                 db_session.refresh(db_pipeline_run)
@@ -71,7 +71,7 @@ def summarize_pdf_task(self, run_uuid_str: str, uploaded_file_log_id: int, file_
             # Apply updates to the model instance
             for key, value in update_data.model_dump(exclude_unset=True).items():
                 setattr(db_pipeline_run, key, value)
-            db_pipeline_run.updated_at = datetime.utcnow() # Ensure updated_at is always set
+            db_pipeline_run.updated_at = datetime.now(timezone.utc) # Ensure updated_at is always set
             
             db_session.add(db_pipeline_run)
             db_session.commit()
@@ -86,7 +86,7 @@ def summarize_pdf_task(self, run_uuid_str: str, uploaded_file_log_id: int, file_
                 try:
                     db_pipeline_run.status = PipelineRunStatus.FAILED
                     db_pipeline_run.error_message = str(e)
-                    db_pipeline_run.updated_at = datetime.utcnow()
+                    db_pipeline_run.updated_at = datetime.now(timezone.utc)
                     db_session.add(db_pipeline_run)
                     db_session.commit()
                 except Exception as db_exc:
@@ -123,7 +123,7 @@ def update_status_on_prerun(sender=None, task_id=None, task=None, args=None, kwa
                 if db_pipeline_run:
                     if db_pipeline_run.status == PipelineRunStatus.QUEUED: # Only update if it's still queued
                         db_pipeline_run.status = PipelineRunStatus.PROCESSING
-                        db_pipeline_run.updated_at = datetime.utcnow()
+                        db_pipeline_run.updated_at = datetime.now(timezone.utc)
                         session.add(db_pipeline_run)
                         session.commit()
                         logger.info(f"Task prerun: Status updated to PROCESSING for run_uuid {run_uuid_str}")
