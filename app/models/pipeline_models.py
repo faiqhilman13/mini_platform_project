@@ -1,5 +1,5 @@
-from sqlmodel import SQLModel, Field, Relationship
-from typing import Optional, List
+from sqlmodel import SQLModel, Field, Relationship, JSON, Column
+from typing import Optional, List, Dict, Any
 from enum import Enum
 import uuid
 from datetime import datetime, timezone
@@ -8,11 +8,11 @@ from datetime import datetime, timezone
 # from .file_models import UploadedFileLog # Assuming UploadedFileLog will be in file_models.py
 
 class PipelineRunStatus(str, Enum):
-    QUEUED = "QUEUED"
-    PROCESSING = "PROCESSING"
-    COMPLETED = "COMPLETED"
-    FAILED = "FAILED"
-    CANCELLED = "CANCELLED"
+    PENDING = "PENDING" # Status before flow execution starts (might not be used for sync flows)
+    RUNNING = "RUNNING" # Flow is actively running (might not be directly observed for sync flows)
+    COMPLETED = "COMPLETED" # Flow finished successfully
+    FAILED = "FAILED"      # Flow finished with an error
+    CANCELLED = "CANCELLED"  # Flow was cancelled (if cancellation is implemented)
 
 class PipelineType(str, Enum):
     PDF_SUMMARIZER = "PDF_SUMMARIZER"
@@ -20,22 +20,29 @@ class PipelineType(str, Enum):
     TEXT_CLASSIFIER = "TEXT_CLASSIFIER"
 
 class PipelineRunBase(SQLModel):
-    pipeline_name: PipelineType
-    status: PipelineRunStatus = PipelineRunStatus.QUEUED
-    output_reference: Optional[str] = None
-    error_message: Optional[str] = None
-    # Foreign key to the UploadedFileLog table
-    uploaded_file_log_id: Optional[int] = Field(default=None, foreign_key="uploadedfilelog.id") # lowercase table name
+    pipeline_type: PipelineType
+    status: PipelineRunStatus = Field(default=PipelineRunStatus.PENDING)
+    config: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column(JSON))
+    result: Optional[List[str]] = Field(default=None, sa_column=Column(JSON))
+    error_message: Optional[str] = Field(default=None)
+    orchestrator_run_id: Optional[str] = Field(default=None, index=True) # Changed from celery_task_id
+    # Foreign key to link to the uploaded file
+    uploaded_file_log_id: int = Field(foreign_key="uploadedfilelog.id")
 
 class PipelineRun(PipelineRunBase, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
-    run_uuid: uuid.UUID = Field(default_factory=uuid.uuid4, index=True, nullable=False, unique=True)
-    celery_task_id: Optional[str] = Field(default=None, index=True)
+    run_uuid: uuid.UUID = Field(
+        default_factory=uuid.uuid4,
+        primary_key=True,
+        index=True,
+        nullable=False,
+    )
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False) # Need to auto-update this
-
-    # Relationship to UploadedFileLog (defined in file_models.py)
-    # file_log: Optional["UploadedFileLog"] = Relationship(back_populates="pipeline_runs")
+    updated_at: Optional[datetime] = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        sa_column_kwargs={"onupdate": lambda: datetime.now(timezone.utc)}
+    )
+    # Relationship (Optional, can be added later if needed for ORM features)
+    # uploaded_file: Optional["UploadedFileLog"] = Relationship(back_populates="pipeline_runs")
 
 class PipelineRunCreate(PipelineRunBase):
     pass
@@ -51,4 +58,23 @@ class PipelineRunUpdate(SQLModel):
     status: Optional[PipelineRunStatus] = None
     output_reference: Optional[str] = None
     error_message: Optional[str] = None
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc)) 
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+# Response model for triggering a pipeline run
+class PipelineRunCreateResponse(SQLModel):
+    run_uuid: uuid.UUID
+    status: PipelineRunStatus
+    uploaded_file_log_id: int
+    message: str # Added message field
+
+# Response model for getting pipeline run status
+class PipelineRunStatusResponse(SQLModel):
+    run_uuid: uuid.UUID
+    pipeline_type: PipelineType
+    status: PipelineRunStatus
+    uploaded_file_log_id: int
+    result: Optional[List[str]] = None # Changed back to List[str]
+    error_message: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+    orchestrator_run_id: Optional[str] = None # Changed from celery_task_id 

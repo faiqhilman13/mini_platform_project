@@ -4,152 +4,201 @@ PDF Summarization Pipeline Logic
 
 import logging
 import os
+from typing import List, Tuple, Dict, Any
 from pypdf import PdfReader # Using pypdf, the successor to PyPDF2
 from sumy.parsers.plaintext import PlaintextParser
 from sumy.nlp.tokenizers import Tokenizer
 from sumy.summarizers.lsa import LsaSummarizer # Using LSA as a starting point
 from sumy.nlp.stemmers import Stemmer
 from sumy.utils import get_stop_words
+from nltk.tokenize import sent_tokenize
+import nltk
+from prefect import task, flow # Added Prefect imports
+
+# Ensure NLTK data is available
+try:
+    nltk.data.find('tokenizers/punkt')
+except nltk.downloader.DownloadError:
+    logging.info("NLTK 'punkt' resource not found. Downloading...")
+    nltk.download('punkt', quiet=True)
+except LookupError:
+    logging.info("NLTK 'punkt' resource not found. Downloading...")
+    nltk.download('punkt', quiet=True)
 
 # Setup basic logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 LANGUAGE = "english"
-DEFAULT_SENTENCE_COUNT = 3
+SENTENCES_COUNT = 5  # Number of sentences in the summary
 
+@task # Decorated with Prefect task
 def extract_text_from_pdf(pdf_path: str) -> str:
     """
-    Extracts text content from a given PDF file.
+    Extracts text content from a PDF file.
 
     Args:
-        pdf_path (str): The file path to the PDF.
+        pdf_path (str): The path to the PDF file.
 
     Returns:
-        str: The extracted text, or an empty string if extraction fails.
+        str: The extracted text content.
+
+    Raises:
+        FileNotFoundError: If the PDF file does not exist.
+        Exception: If there is an error reading the PDF.
     """
-    text = ""
+    logger.info(f"Extracting text from PDF: {pdf_path}")
+    if not os.path.exists(pdf_path):
+        raise FileNotFoundError(f"PDF file not found at {pdf_path}")
+
     try:
         reader = PdfReader(pdf_path)
+        text = ""
         for page in reader.pages:
             page_text = page.extract_text()
             if page_text:
-                text += page_text + "\n"
-        logger.info(f"Successfully extracted {len(text)} characters from '{pdf_path}'.")
-    except FileNotFoundError:
-        logger.error(f"Error parsing PDF: File not found at '{pdf_path}'.")
-        return "" # Or raise specific error
+                text += page_text + "\n"  # Add newline between pages
+        logger.info(f"Successfully extracted text from {pdf_path}.")
+        return text.strip() # Remove leading/trailing whitespace
     except Exception as e:
-        logger.error(f"Error parsing PDF '{pdf_path}': {e}")
-        return "" # Or raise specific error
-    return text
+        logger.error(f"Error reading PDF {pdf_path}: {e}")
+        raise Exception(f"Failed to extract text from PDF: {e}")
 
-def summarize_text(text: str, num_sentences: int = DEFAULT_SENTENCE_COUNT, language: str = LANGUAGE) -> str:
+@task # Decorated with Prefect task
+def summarize_text(text: str, language: str = LANGUAGE, sentences_count: int = SENTENCES_COUNT) -> List[str]:
     """
-    Generates an extractive summary from the given text.
+    Summarizes the given text using the LSA algorithm.
 
     Args:
         text (str): The text to summarize.
-        num_sentences (int): The desired number of sentences in the summary.
-        language (str): The language of the text (for tokenizer, stemmer, stop words).
+        language (str): The language of the text (default: "english").
+        sentences_count (int): The desired number of sentences in the summary (default: 5).
 
     Returns:
-        str: The generated summary, or an empty string if summarization fails.
+        List[str]: A list of sentences forming the summary.
+
+    Raises:
+        ValueError: If the input text is empty or too short.
+        Exception: For errors during summarization.
     """
-    if not text.strip():
-        logger.warning("Cannot summarize empty or whitespace-only text.")
-        return ""
+    logger.info(f"Summarizing text ({language}, {sentences_count} sentences).")
+    # Ensure NLTK sentence tokenizer is available
+    try:
+        sent_tokenize(text) # Use it to check for errors / availability
+    except (LookupError, FileNotFoundError):
+        logger.exception(f"NLTK 'punkt' data not found or failed to load for language '{language}'.")
+        return [] # Return empty list if tokenizer isn't available
+
+    # Check if text is too short or just whitespace after initial check
+    if not text.strip() or len(sent_tokenize(text)) < sentences_count:
+        logger.warning("Input text is too short for summarization or empty.")
+        return [] # Return empty list if too short or empty
+
     try:
         parser = PlaintextParser.from_string(text, Tokenizer(language))
         stemmer = Stemmer(language)
         summarizer = LsaSummarizer(stemmer)
         summarizer.stop_words = get_stop_words(language)
-        
-        summary_sentences = summarizer(parser.document, num_sentences)
-        summary = " ".join([str(sentence) for sentence in summary_sentences])
-        logger.info(f"Successfully generated summary with {len(summary_sentences)} sentences.")
-        return summary
-    except Exception as e:
-        logger.error(f"Error during text summarization: {e}")
-        return "" # Or raise specific error
 
-def run_pdf_summary_pipeline(pdf_path: str, num_summary_sentences: int = DEFAULT_SENTENCE_COUNT) -> dict:
+        summary_sentences = []
+        for sentence in summarizer(parser.document, sentences_count):
+            summary_sentences.append(str(sentence))
+
+        logger.info("Successfully generated summary.")
+        return summary_sentences
+    except Exception as e:
+        logger.error(f"Error during summarization: {e}")
+        # Return empty list on error instead of raising Exception
+        return []
+
+@flow(name="PDF Summarization Flow") # New Prefect flow
+def run_pdf_summary_pipeline(pdf_path: str) -> Dict[str, Any]:
     """
-    Orchestrates the PDF summarization pipeline: extracts text and summarizes it.
+    Runs the PDF summarization pipeline as a Prefect flow.
 
     Args:
-        pdf_path (str): Path to the PDF file.
-        num_summary_sentences (int): Desired number of sentences in the summary.
+        pdf_path (str): Path to the input PDF file.
 
     Returns:
-        dict: A dictionary containing the summary and a status message.
-              Example: {"summary": "...", "status": "success"} or 
-                       {"summary": "", "status": "error: reason..."}
+        Dict[str, Any]: A dictionary containing the status and summary.
+                      {'status': 'success', 'summary': [sentence1, ...]} or
+                      {'status': 'error', 'message': 'error details'}
     """
-    logger.info(f"Starting PDF summary pipeline for '{pdf_path}'.")
-    extracted_text = extract_text_from_pdf(pdf_path)
-    
-    if not extracted_text:
-        error_message = f"Failed to extract text from PDF '{pdf_path}'."
-        logger.error(error_message)
-        return {"summary": "", "status": f"error: {error_message}"}
-    
-    summary = summarize_text(extracted_text, num_summary_sentences)
-    
-    if not summary:
-        error_message = f"Failed to generate summary for PDF '{pdf_path}'."
-        logger.error(error_message)
-        return {"summary": "", "status": f"error: {error_message}"}
+    logger.info(f"Starting PDF summary flow for: {pdf_path}")
+    try:
+        # Call tasks using .submit() for potential parallelism or use default sequential execution
+        extracted_text = extract_text_from_pdf(pdf_path) 
+        if not extracted_text:
+            logger.warning("Extracted text is empty. Cannot summarize.")
+            # Returning error status within the flow's result
+            return {"status": "error", "message": "Extracted text is empty."}
+
+        # Call summarize_text without sentences_count, using its default
+        summary_list = summarize_text(extracted_text) 
         
-    logger.info(f"PDF summary pipeline completed successfully for '{pdf_path}'.")
-    return {"summary": summary, "status": "success"}
+        # Check if summarization failed (returned empty list due to error)
+        if not summary_list and extracted_text: # Check extracted_text to differentiate from genuinely empty PDFs
+             logger.error(f"Summarization task failed for {pdf_path}")
+             return {"status": "error", "message": "Summarization task failed."}
+             
+        logger.info(f"Flow completed successfully for: {pdf_path}")
+        # Return list directly in summary field
+        return {"status": "success", "summary": summary_list} 
+
+    except FileNotFoundError as e:
+        logger.error(f"Flow failed due to missing file: {pdf_path} - {e}")
+        return {"status": "error", "message": f"File not found: {pdf_path}"}
+    except Exception as e:
+        # Log exceptions happening during task execution or flow logic
+        logger.exception(f"PDF summary flow failed for {pdf_path}: {e}")
+        # Prefect automatically captures task failures, but we can return a structured error
+        return {"status": "error", "message": f"Flow failed: {e}"}
 
 if __name__ == '__main__':
-    # Example usage (for testing purposes)
-    # Create a dummy PDF for testing if you don't have one.
-    # For example, save some text to a .txt file and convert to .pdf using an online tool.
-    # Or, ensure you have a PDF in your project directory for testing.
-    test_pdf_path = "example.pdf" # Replace with a path to a real PDF file for testing
-    
-    # Create a dummy example.pdf if it doesn't exist for basic testing
-    # Note: This dummy PDF will likely be empty or very simple. 
-    # For real testing, use a proper PDF document.
+    # Example usage for local testing
+    # Create a dummy pdf if it doesn't exist
+    if not os.path.exists("example.pdf"):
+        from reportlab.pdfgen import canvas
+        from reportlab.lib.pagesizes import letter
+        c = canvas.Canvas("example.pdf", pagesize=letter)
+        textobject = c.beginText(50, 750)
+        textobject.textLines('''
+        This is the first sentence of the example PDF document.
+        Prefect is a workflow orchestration tool designed for modern data stacks.
+        It helps build, run, and monitor data pipelines.
+        This document exists solely for testing the summarization pipeline.
+        LSA summarization will attempt to find the most salient sentences.
+        We expect the summary to contain key concepts about Prefect.
+        The final sentence provides closure.
+        ''')
+        c.drawText(textobject)
+        c.save()
+        print("Created dummy example.pdf")
+
+    pdf_file = "example.pdf"
+    print(f"Running pipeline for {pdf_file}...")
+    # result = run_pdf_summary_pipeline_celery(pdf_file) # Removed test for old function
+    result = run_pdf_summary_pipeline(pdf_file) # Test the new Prefect flow
+    print("\nResult:")
+    print(result)
+
+    if result["status"] == "success":
+        print("\nSummary:")
+        for sentence in result["summary"]:
+            print(f"- {sentence}")
+
+    # Test case for non-existent file
+    print("\nRunning pipeline for non_existent.pdf...")
+    result_non_existent = run_pdf_summary_pipeline("non_existent.pdf")
+    print("\nResult (Non-existent file):")
+    print(result_non_existent)
+
+    # Test case for empty file (difficult to create directly, simulate with empty text)
+    print("\nRunning pipeline for empty text...")
     try:
-        with open(test_pdf_path, "rb") as f:
-            pass # Just check if it exists
-        logger.info(f"Found test PDF: {test_pdf_path}")
-    except FileNotFoundError:
-        try:
-            from reportlab.pdfgen import canvas
-            from reportlab.lib.pagesizes import letter
-            c = canvas.Canvas(test_pdf_path, pagesize=letter)
-            c.drawString(72, 720, "This is a simple test PDF for the summarizer pipeline.")
-            c.drawString(72, 700, "It contains a few sentences to see if text extraction works.")
-            c.drawString(72, 680, "Sumy should be able to pick out the most salient points hopefully.")
-            c.save()
-            logger.info(f"Created dummy test PDF: {test_pdf_path}. Please replace with a real PDF for meaningful testing.")
-            # Add reportlab to requirements.txt if you keep this dummy creation code for long.
-        except ImportError:
-            logger.warning(f"Could not create dummy PDF {test_pdf_path} because reportlab is not installed.")
-            logger.warning("Please create a PDF manually or install reportlab for this example to run.")
-        except Exception as e:
-            logger.error(f"Could not create dummy PDF {test_pdf_path}: {e}")
-
-    if os.path.exists(test_pdf_path):
-        result = run_pdf_summary_pipeline(test_pdf_path, num_summary_sentences=2)
-        print("\n--- Pipeline Result ---")
-        print(f"Status: {result['status']}")
-        print(f"Summary: {result['summary']}")
-    else:
-        print(f"\nSkipping example run as test PDF '{test_pdf_path}' was not found and could not be created.")
-
-    # To use NLTK data like 'punkt' for tokenization, you might need to download it once:
-    # import nltk
-    # try:
-    #     nltk.data.find('tokenizers/punkt')
-    # except nltk.downloader.DownloadError:
-    #     nltk.download('punkt')
-    # try:
-    #     nltk.data.find('corpora/stopwords')
-    # except nltk.downloader.DownloadError:
-    #     nltk.download('stopwords') # if your sumy summarizer uses NLTK stopwords 
+        empty_text_summary = summarize_text("")
+        print("\nResult (Empty text):")
+        print({"status": "success", "summary": empty_text_summary})
+    except Exception as e:
+        print("\nResult (Empty text):")
+        print({"status": "error", "message": str(e)})

@@ -21,7 +21,7 @@ async def lifespan(app: FastAPI):
     print("INFO:     Application shutting down...")
 
 app = FastAPI(
-    title=settings.APP_NAME, # Use app name from settings
+    title=settings.PROJECT_NAME, # Use project name from settings
     version="0.1.0",
     description="API for the Internal Developer Platform for AI Workflows",
     lifespan=lifespan # Use the lifespan context manager

@@ -2,17 +2,29 @@ fastapi
 uvicorn[standard]
 sqlmodel
 pydantic-settings
-pypdf
-sumy
-nltk
-reportlab
-celery
-redis
-python-multipart
-numpy
+psycopg2-binary
+sqlalchemy
+alembic
+python-jose[cryptography]
+passlib[bcrypt]
+python-multipart==0.0.9
+numpy==1.26.4
+prefect==2.19.5
 
 # Testing libraries
 pytest
 pytest-asyncio
 respx
-httpx 
+httpx
+
+# New additions
+langchain
+langchain-community
+sentence-transformers
+faiss-cpu
+pypdf
+reportlab
+langchain-openai
+python-dotenv
+sumy==0.11.0
+nltk 

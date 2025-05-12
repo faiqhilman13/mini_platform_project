@@ -1,12 +1,17 @@
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
-    APP_NAME: str = "Mini IDP"
+    PROJECT_NAME: str = "Mini IDP - AI Workflow Platform"
     API_V1_STR: str = "/api/v1"
-    DATABASE_URL: str = "sqlite:///./mini_idp.db" # Default to SQLite for MVP
-    REDIS_URL: str = "redis://localhost:6379/0" # Default Redis URL
 
-    # If using .env file for configuration:
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding='utf-8', extra='ignore')
+    # Database settings
+    DATABASE_URL: str = "sqlite:///./mini_idp.db" # Use SQLite for MVP
+
+    # File Upload Settings
+    UPLOADED_FILES_DIR: str = "./uploaded_files"
+
+    class Config:
+        env_file = ".env"
+        case_sensitive = True
 
 settings = Settings() 
