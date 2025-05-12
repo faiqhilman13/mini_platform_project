@@ -112,13 +112,17 @@
         - [x] Tests for Celery summarization task and signals (`app/tasks/summarization_tasks.py`).
         - [x] All tests passing after debugging (2024-07-31).
 
-**Phase 2: Workflow Orchestration & Additional Pipelines**
+**Phase 2: Workflow Orchestration with Prefect**
   - **Goal:** Integrate a workflow orchestrator, add RAG and Text Classifier pipelines.
   - **Tasks:**
-    - [ ] **P2.1: Select & Integrate Workflow Orchestrator** (e.g., Prefect)
-        - [ ] Research and finalize choice (Prefect, n8n, Dagster).
-        - [ ] Install and configure the orchestrator.
-        - [ ] Refactor PDF Summarizer task to be managed by the orchestrator.
+    - [X] **P2.1: Integrate Prefect & Refactor Summarizer Pipeline**
+        - [X] Install Prefect
+        - [X] Refactor `workflows/pipelines/summarizer.py` to use Prefect `@task` and `@flow` decorators.
+        - [X] Remove Celery task (`app/tasks/summarization_tasks.py`, `app/core/celery_app.py`) and dependencies (`celery`, `redis`).
+        - [X] Update `app/services/pipeline_service.py` to call the Prefect flow synchronously.
+        - [X] Update `app/models/pipeline_models.py` (rename `celery_task_id`, add `result`, `error_message`).
+        - [X] Update `app/routers/pipelines.py` to use the synchronous service call and updated models.
+        - [ ] Update unit tests (`test_summarizer.py`, `test_pipeline_service.py`, `test_pipelines.py`) to reflect synchronous flow and removed Celery. - *In Progress (2025-05-12)*
     - [ ] **P2.2: RAG Chatbot Pipeline**
         - [ ] `workflows/pipelines/rag_chatbot.py`
         - [ ] Document loading and chunking (LangChain).
