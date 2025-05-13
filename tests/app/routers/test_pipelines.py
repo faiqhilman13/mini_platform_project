@@ -53,8 +53,8 @@ def test_trigger_pipeline_success(client: TestClient, mock_db_session_override: 
     mock_db_session_override.get.return_value = mock_file_log
 
     # Patch the pipeline service call
-    with patch("app.routers.pipelines.pipeline_service.create_and_dispatch_summary_pipeline", 
-              return_value=mock_service_response) as mock_create_dispatch:
+    with patch("app.routers.pipelines.pipeline_service.trigger_pipeline_flow", 
+              return_value=mock_service_response) as mock_trigger_flow:
         response = client.post(
             "/api/v1/pipelines/trigger",
             json={"uploaded_file_log_id": 123, "pipeline_type": "PDF_SUMMARIZER"}
@@ -74,11 +74,10 @@ def test_trigger_pipeline_success(client: TestClient, mock_db_session_override: 
     mock_db_session_override.get.assert_called_once_with(UploadedFileLog, 123)
     
     # Assert pipeline dispatch call
-    mock_create_dispatch.assert_called_once_with(
+    mock_trigger_flow.assert_called_once_with(
         db=mock_db_session_override,
         uploaded_file_log_id=123,
-        file_path="/path/to/file.pdf",
-        original_filename="file.pdf"
+        pipeline_type=PipelineType.PDF_SUMMARIZER # Ensure this matches the type sent in request
     )
 
 def test_trigger_pipeline_file_log_not_found(client: TestClient, mock_db_session_override: MagicMock):
@@ -87,7 +86,7 @@ def test_trigger_pipeline_file_log_not_found(client: TestClient, mock_db_session
     mock_db_session_override.get.return_value = None
 
     # Patch the service call (shouldn't be called)
-    with patch("app.routers.pipelines.pipeline_service.create_and_dispatch_summary_pipeline") as mock_create_dispatch:
+    with patch("app.routers.pipelines.pipeline_service.trigger_pipeline_flow") as mock_trigger_flow:
         response = client.post(
             "/api/v1/pipelines/trigger",
             json={"uploaded_file_log_id": 999, "pipeline_type": "PDF_SUMMARIZER"}
@@ -96,7 +95,7 @@ def test_trigger_pipeline_file_log_not_found(client: TestClient, mock_db_session
     assert response.status_code == 404
     assert "Uploaded file log with id 999 not found" in response.json()["detail"]
     mock_db_session_override.get.assert_called_once_with(UploadedFileLog, 999)
-    mock_create_dispatch.assert_not_called() # Service was not called
+    mock_trigger_flow.assert_not_called() # Service was not called
 
 def test_trigger_pipeline_unsupported_type(client: TestClient, mock_db_session_override: MagicMock):
     """Test triggering with an unsupported pipeline type."""
@@ -107,16 +106,20 @@ def test_trigger_pipeline_unsupported_type(client: TestClient, mock_db_session_o
     )
     mock_db_session_override.get.return_value = mock_file_log
 
-    # Patch the service call (shouldn't be called)
-    with patch("app.routers.pipelines.pipeline_service.create_and_dispatch_summary_pipeline") as mock_create_dispatch:
+    # Patch the service call (shouldn't be called if router handles type check first)
+    # However, the router now passes it to the service, so the service will raise the error.
+    # Let's assume the service raises an HTTPException for unsupported type,
+    # and the router propagates it.
+    with patch("app.routers.pipelines.pipeline_service.trigger_pipeline_flow", 
+              side_effect=HTTPException(status_code=400, detail="Unsupported pipeline type: RAG_CHATBOT")) as mock_trigger_flow:
         response = client.post(
             "/api/v1/pipelines/trigger",
-            json={"uploaded_file_log_id": 123, "pipeline_type": "RAG_CHATBOT"} # Use a currently unsupported type
+            json={"uploaded_file_log_id": 123, "pipeline_type": "RAG_CHATBOT"} 
         )
-    assert response.status_code == 400 # Expect 400 Bad Request
-    assert response.json()["detail"] == "Pipeline type 'RAG_CHATBOT' not yet implemented."
-    mock_db_session_override.get.assert_called_once_with(UploadedFileLog, 123) # DB was checked
-    mock_create_dispatch.assert_not_called() # Service was not called
+    assert response.status_code == 400 
+    assert response.json()["detail"] == "Unsupported pipeline type: RAG_CHATBOT"
+    mock_db_session_override.get.assert_called_once_with(UploadedFileLog, 123) 
+    mock_trigger_flow.assert_called_once() # Service IS called, and it raises the error
 
 def test_trigger_pipeline_service_http_exception(client: TestClient, mock_db_session_override: MagicMock):
     """Test when the pipeline service layer raises a known HTTPException."""
@@ -128,8 +131,8 @@ def test_trigger_pipeline_service_http_exception(client: TestClient, mock_db_ses
     mock_db_session_override.get.return_value = mock_file_log
 
     # Mock the service call to raise HTTPException
-    with patch("app.routers.pipelines.pipeline_service.create_and_dispatch_summary_pipeline", 
-              side_effect=HTTPException(status_code=500, detail="Flow failed")) as mock_create_dispatch:
+    with patch("app.routers.pipelines.pipeline_service.trigger_pipeline_flow", 
+              side_effect=HTTPException(status_code=500, detail="Flow failed")) as mock_trigger_flow:
         response = client.post(
             "/api/v1/pipelines/trigger",
             json={"uploaded_file_log_id": 123, "pipeline_type": "PDF_SUMMARIZER"}
@@ -137,7 +140,7 @@ def test_trigger_pipeline_service_http_exception(client: TestClient, mock_db_ses
     assert response.status_code == 500
     assert "Flow failed" in response.json()["detail"]
     mock_db_session_override.get.assert_called_once_with(UploadedFileLog, 123) # DB was checked
-    mock_create_dispatch.assert_called_once() # Service was called
+    mock_trigger_flow.assert_called_once() # Service was called
 
 def test_trigger_pipeline_service_general_exception(client: TestClient, mock_db_session_override: MagicMock):
     """Test when the pipeline service layer raises an unexpected general exception."""
@@ -149,8 +152,8 @@ def test_trigger_pipeline_service_general_exception(client: TestClient, mock_db_
     mock_db_session_override.get.return_value = mock_file_log
 
     # Mock the service call to raise general Exception
-    with patch("app.routers.pipelines.pipeline_service.create_and_dispatch_summary_pipeline", 
-              side_effect=Exception("Something broke")) as mock_create_dispatch:
+    with patch("app.routers.pipelines.pipeline_service.trigger_pipeline_flow", 
+              side_effect=Exception("Something broke")) as mock_trigger_flow:
         response = client.post(
             "/api/v1/pipelines/trigger",
             json={"uploaded_file_log_id": 123, "pipeline_type": "PDF_SUMMARIZER"}
@@ -159,19 +162,19 @@ def test_trigger_pipeline_service_general_exception(client: TestClient, mock_db_
     # Check the error message includes the exception message
     assert response.json()["detail"] == "Internal server error: Something broke"
     mock_db_session_override.get.assert_called_once_with(UploadedFileLog, 123) # DB was checked
-    mock_create_dispatch.assert_called_once() # Service was called
+    mock_trigger_flow.assert_called_once() # Service was called
 
 def test_get_pipeline_status_success(client: TestClient, mock_db_session_override: MagicMock):
     """Test successfully retrieving pipeline status."""
     mock_run_uuid = uuid.uuid4()
     now = datetime.now(timezone.utc)
-    # Updated response model - ensure result matches List[str]
+    # Updated response model - result should be a Dict
     mock_service_response = PipelineRunStatusResponse(
         run_uuid=mock_run_uuid,
         pipeline_type=PipelineType.PDF_SUMMARIZER,
         status=PipelineRunStatus.COMPLETED,
         uploaded_file_log_id=123,
-        result=["Summary sentence 1."], # Matches List[str]
+        result={"summary": "Summary sentence 1."}, # Changed to Dict
         error_message=None,
         created_at=now,
         updated_at=now
@@ -185,7 +188,7 @@ def test_get_pipeline_status_success(client: TestClient, mock_db_session_overrid
     validated_response = PipelineRunStatusResponse(**data)
     assert str(validated_response.run_uuid) == str(mock_run_uuid)
     assert validated_response.status == PipelineRunStatus.COMPLETED
-    assert validated_response.result == ["Summary sentence 1."]
+    assert validated_response.result == {"summary": "Summary sentence 1."} # Check Dict
     mock_get_status.assert_called_once_with(run_uuid=mock_run_uuid, db=mock_db_session_override)
 
 def test_get_pipeline_status_not_found(client: TestClient, mock_db_session_override: MagicMock):

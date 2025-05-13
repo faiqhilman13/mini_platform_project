@@ -23,7 +23,7 @@ class PipelineRunBase(SQLModel):
     pipeline_type: PipelineType
     status: PipelineRunStatus = Field(default=PipelineRunStatus.PENDING)
     config: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column(JSON))
-    result: Optional[List[str]] = Field(default=None, sa_column=Column(JSON))
+    result: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column(JSON))
     error_message: Optional[str] = Field(default=None)
     orchestrator_run_id: Optional[str] = Field(default=None, index=True) # Changed from celery_task_id
     # Foreign key to link to the uploaded file
@@ -57,6 +57,7 @@ class PipelineRunRead(PipelineRunBase):
 class PipelineRunUpdate(SQLModel):
     status: Optional[PipelineRunStatus] = None
     output_reference: Optional[str] = None
+    result: Optional[Dict[str, Any]] = None
     error_message: Optional[str] = None
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
@@ -73,7 +74,7 @@ class PipelineRunStatusResponse(SQLModel):
     pipeline_type: PipelineType
     status: PipelineRunStatus
     uploaded_file_log_id: int
-    result: Optional[List[str]] = None # Changed back to List[str]
+    result: Optional[Dict[str, Any]] = None # Changed back to List[str]
     error_message: Optional[str] = None
     created_at: datetime
     updated_at: datetime

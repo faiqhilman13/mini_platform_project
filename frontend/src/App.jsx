@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import UploadPage from './pages/UploadPage';
 import TriggerPage from './pages/TriggerPage';
 import StatusPage from './pages/StatusPage';
+import ChatPage from './pages/ChatPage';
 import './App.css'; // Assuming you might have some global styles here
 
 function App() {
@@ -19,6 +20,7 @@ function App() {
           <Route path="/trigger" element={<TriggerPage />} />
           <Route path="/status" element={<StatusPage />} />
           <Route path="/status/:runId" element={<StatusPage />} />
+          <Route path="/chat/:runId" element={<ChatPage />} />
         </Routes>
       </div>
     </Router>

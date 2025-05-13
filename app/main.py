@@ -8,6 +8,7 @@ from contextlib import asynccontextmanager # Import asynccontextmanager
 from app.core.config import settings # Ensure settings is imported if not already
 from app.routers import upload # Import the new router
 from app.routers import pipelines as pipelines_router # Import the new pipeline router
+from app.routers import rag as rag_router  # Import the new RAG router
 from app.db.session import create_db_and_tables # Import the function
 
 @asynccontextmanager
@@ -54,6 +55,7 @@ async def health_check():
 # Include routers
 app.include_router(upload.router)
 app.include_router(pipelines_router.router) # Include the pipeline router
+app.include_router(rag_router.router) # Include the RAG router
 
 # Placeholder for future routers
 # from app.routers import pipeline_router # Example

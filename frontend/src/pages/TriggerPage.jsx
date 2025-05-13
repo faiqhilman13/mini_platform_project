@@ -53,9 +53,8 @@ function TriggerPage() {
             style={{ width: '100%', padding: 8, boxSizing: 'border-box' }}
           >
             <option value="PDF_SUMMARIZER">PDF Summarizer</option>
-            {/* Add other pipeline types here as they become available */}
-            {/* <option value="RAG_CHATBOT">RAG Chatbot</option> */}
-            {/* <option value="TEXT_CLASSIFIER">Text Classifier</option> */}
+            <option value="RAG_CHATBOT">RAG Chatbot</option>
+            <option value="TEXT_CLASSIFIER">Text Classifier</option>
           </select>
         </div>
         <button 

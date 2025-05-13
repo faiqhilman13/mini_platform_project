@@ -1,86 +1,106 @@
 import logging
 import uuid
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Optional, Dict, Any
+import os
 
 from fastapi import HTTPException
 from sqlmodel import Session, select
 
 from app.models.pipeline_models import PipelineRun, PipelineType, PipelineRunStatus, PipelineRunCreateResponse, PipelineRunStatusResponse
 from app.models.file_models import UploadedFileLog
-from workflows.pipelines.summarizer import run_pdf_summary_pipeline # Import Prefect flow
+
+from workflows.pipelines.summarizer import run_pdf_summary_pipeline
+from workflows.pipelines.rag_chatbot import process_document_rag_flow
+from workflows.pipelines.text_classifier import text_classification_flow
+from workflows.pipelines.rag_utils import extract_text_from_pdf
 
 logger = logging.getLogger(__name__)
 
 
-def create_and_dispatch_summary_pipeline(
+def trigger_pipeline_flow(
     db: Session,
     uploaded_file_log_id: int,
-    file_path: str,
-    original_filename: str
+    pipeline_type: PipelineType,
 ) -> PipelineRunCreateResponse:
     """
-    Creates a PipelineRun record for a PDF summarization pipeline and runs the Prefect flow synchronously.
+    Creates a PipelineRun record and runs the specified Prefect flow synchronously.
 
     Args:
         db (Session): Database session.
         uploaded_file_log_id (int): ID of the uploaded file log record.
-        file_path (str): Absolute path to the uploaded file.
-        original_filename (str): Original name of the uploaded file.
+        pipeline_type (PipelineType): The type of pipeline to run.
 
     Returns:
         PipelineRunCreateResponse: Response containing the run UUID and initial status.
 
     Raises:
-        HTTPException: If the pipeline record cannot be created or the flow fails immediately.
+        HTTPException: If the pipeline record cannot be created or the flow fails.
     """
-    logger.info(f"Initiating PDF summarization pipeline for file ID: {uploaded_file_log_id}")
+    logger.info(f"Initiating pipeline type: {pipeline_type} for file ID: {uploaded_file_log_id}")
 
-    # Verify that the uploaded file log exists
     uploaded_file_log = db.get(UploadedFileLog, uploaded_file_log_id)
     if not uploaded_file_log:
         logger.error(f"UploadedFileLog with id {uploaded_file_log_id} not found")
         raise HTTPException(status_code=404, detail=f"UploadedFileLog with id {uploaded_file_log_id} not found")
 
-    # 1. Create PipelineRun record
+    file_path = uploaded_file_log.storage_location
+    original_filename = uploaded_file_log.filename
+
     pipeline_run = PipelineRun(
         uploaded_file_log_id=uploaded_file_log_id,
-        pipeline_type=PipelineType.PDF_SUMMARIZER,
-        status=PipelineRunStatus.PENDING, # Start as PENDING
-        # orchestrator_run_id will be null for sync run for now
+        pipeline_type=pipeline_type,
+        status=PipelineRunStatus.PENDING,
     )
     try:
         db.add(pipeline_run)
         db.commit()
         db.refresh(pipeline_run)
-        logger.info(f"Created PipelineRun record with UUID: {pipeline_run.run_uuid}")
+        logger.info(f"Created PipelineRun record with UUID: {pipeline_run.run_uuid} for {pipeline_type}")
     except Exception as e:
         db.rollback()
         logger.exception("Database error creating PipelineRun record.")
         raise HTTPException(status_code=500, detail=f"Database error: {e}")
 
-    # 2. Run the Prefect flow synchronously
+    flow_result: Optional[Dict[str, Any]] = None
     try:
-        # Update status to RUNNING before execution
         pipeline_run.status = PipelineRunStatus.RUNNING
         pipeline_run.updated_at = datetime.now(timezone.utc)
         db.add(pipeline_run)
         db.commit()
         db.refresh(pipeline_run)
 
-        logger.info(f"Running Prefect flow 'run_pdf_summary_pipeline' for run UUID: {pipeline_run.run_uuid}")
-        flow_result = run_pdf_summary_pipeline(pdf_path=file_path)
-        logger.info(f"Prefect flow completed for run UUID: {pipeline_run.run_uuid} with status: {flow_result.get('status')}")
+        logger.info(f"Running Prefect flow for {pipeline_type}, run UUID: {pipeline_run.run_uuid}")
 
-        # 3. Update PipelineRun record with flow result
-        if flow_result.get("status") == "success":
+        if pipeline_type == PipelineType.PDF_SUMMARIZER:
+            flow_result = run_pdf_summary_pipeline(pdf_path=file_path)
+        elif pipeline_type == PipelineType.RAG_CHATBOT:
+            flow_result = process_document_rag_flow(pdf_path=file_path, title=original_filename)
+        elif pipeline_type == PipelineType.TEXT_CLASSIFIER:
+            logger.info(f"Extracting text from PDF for Text Classifier: {file_path}")
+            extracted_pages_data = extract_text_from_pdf(file_path)
+            if not extracted_pages_data:
+                flow_result = {"status": "error", "message": "No text could be extracted from PDF for classification."}
+            else:
+                full_text = "\n".join([page_content for page_content, _ in extracted_pages_data])
+                if not full_text.strip():
+                    flow_result = {"status": "error", "message": "Extracted text is empty, cannot classify."}
+                else:
+                    flow_result = text_classification_flow(text_content=full_text)
+        else:
+            logger.error(f"Unsupported pipeline type: {pipeline_type}")
+            raise HTTPException(status_code=400, detail=f"Unsupported pipeline type: {pipeline_type}")
+        
+        logger.info(f"Prefect flow {pipeline_type} completed for run UUID: {pipeline_run.run_uuid} with result: {flow_result}")
+
+        if flow_result and flow_result.get("status") == "success":
             pipeline_run.status = PipelineRunStatus.COMPLETED
-            pipeline_run.result = flow_result.get("summary")
+            pipeline_run.result = flow_result
             pipeline_run.error_message = None
         else:
             pipeline_run.status = PipelineRunStatus.FAILED
             pipeline_run.result = None
-            pipeline_run.error_message = flow_result.get("message", "Flow failed without specific message.")
+            pipeline_run.error_message = flow_result.get("message", "Flow failed without specific message.") if flow_result else "Flow execution error or no result."
 
         pipeline_run.updated_at = datetime.now(timezone.utc)
         db.add(pipeline_run)
@@ -89,26 +109,35 @@ def create_and_dispatch_summary_pipeline(
 
         return PipelineRunCreateResponse(
             run_uuid=pipeline_run.run_uuid,
-            status=pipeline_run.status, # Return final status from sync run
+            status=pipeline_run.status,
             uploaded_file_log_id=pipeline_run.uploaded_file_log_id,
-            message="PDF summarization flow executed synchronously."
+            message=f"{pipeline_type.value} flow executed synchronously."
         )
 
-    except Exception as e:
-        # Mark as FAILED if synchronous execution raises an exception
-        db.rollback() # Rollback potential partial commits if exception occurs mid-process
-        # Fetch the pipeline run again to update it, or create if the initial creation failed somehow
+    except HTTPException as http_exc:
+        db.rollback()
         pipeline_run_to_fail = db.get(PipelineRun, pipeline_run.run_uuid)
         if pipeline_run_to_fail:
             pipeline_run_to_fail.status = PipelineRunStatus.FAILED
-            pipeline_run_to_fail.error_message = f"Error during synchronous flow execution: {e}"
+            pipeline_run_to_fail.error_message = getattr(http_exc, 'detail', str(http_exc))
+            pipeline_run_to_fail.updated_at = datetime.now(timezone.utc)
+            db.add(pipeline_run_to_fail)
+            db.commit()
+        logger.warning(f"HTTPException during {pipeline_type} flow execution for run UUID {pipeline_run.run_uuid}: {http_exc.detail}")
+        raise http_exc
+
+    except Exception as e:
+        db.rollback()
+        pipeline_run_to_fail = db.get(PipelineRun, pipeline_run.run_uuid)
+        if pipeline_run_to_fail:
+            pipeline_run_to_fail.status = PipelineRunStatus.FAILED
+            pipeline_run_to_fail.error_message = f"Error during {pipeline_type.value} flow execution: {str(e)}"
             pipeline_run_to_fail.updated_at = datetime.now(timezone.utc)
             db.add(pipeline_run_to_fail)
             db.commit()
 
-        logger.exception(f"Error running synchronous Prefect flow for run UUID: {pipeline_run.run_uuid}")
-        # Raise HTTPException here because the initial trigger request failed
-        raise HTTPException(status_code=500, detail=f"Failed to execute summarization flow: {e}")
+        logger.exception(f"Error running synchronous Prefect flow for {pipeline_type}, run UUID: {pipeline_run.run_uuid}")
+        raise HTTPException(status_code=500, detail=f"Failed to execute {pipeline_type.value} flow: {str(e)}")
 
 
 def get_pipeline_run_status(db: Session, run_uuid: uuid.UUID) -> Optional[PipelineRunStatusResponse]:
@@ -124,17 +153,14 @@ def get_pipeline_run_status(db: Session, run_uuid: uuid.UUID) -> Optional[Pipeli
     """
     logger.debug(f"Fetching status for pipeline run UUID: {run_uuid}")
     
-    # Use select().where() for querying by non-primary key
     statement = select(PipelineRun).where(PipelineRun.run_uuid == run_uuid)
     pipeline_run = db.exec(statement).one_or_none()
 
     if not pipeline_run:
         logger.warning(f"Pipeline run with UUID {run_uuid} not found.")
-        # Return None instead of raising HTTPException
         return None
 
     logger.debug(f"Found pipeline run: {pipeline_run.run_uuid}, Status: {pipeline_run.status}")
-    # Map the DB model to the response model
     return PipelineRunStatusResponse(
         run_uuid=pipeline_run.run_uuid,
         pipeline_type=pipeline_run.pipeline_type,
@@ -143,5 +169,6 @@ def get_pipeline_run_status(db: Session, run_uuid: uuid.UUID) -> Optional[Pipeli
         result=pipeline_run.result,
         error_message=pipeline_run.error_message,
         created_at=pipeline_run.created_at,
-        updated_at=pipeline_run.updated_at
+        updated_at=pipeline_run.updated_at,
+        orchestrator_run_id=pipeline_run.orchestrator_run_id
     ) 

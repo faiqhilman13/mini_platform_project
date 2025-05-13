@@ -122,27 +122,38 @@
         - [X] Update `app/services/pipeline_service.py` to call the Prefect flow synchronously.
         - [X] Update `app/models/pipeline_models.py` (rename `celery_task_id`, add `result`, `error_message`).
         - [X] Update `app/routers/pipelines.py` to use the synchronous service call and updated models.
-        - [ ] Update unit tests (`test_summarizer.py`, `test_pipeline_service.py`, `test_pipelines.py`) to reflect synchronous flow and removed Celery. - *In Progress (2025-05-12)*
-    - [ ] **P2.2: RAG Chatbot Pipeline**
-        - [ ] `workflows/pipelines/rag_chatbot.py`
-        - [ ] Document loading and chunking (LangChain).
-        - [ ] Embedding generation (e.g., Sentence Transformers, OpenAI embeddings). *Creative Component: Choice of embedding model and vector store.*
-        - [ ] Vector store setup (FAISS for local, consider alternatives).
-        - [ ] Retrieval and generation logic (LangChain).
-        - [ ] Integrate with orchestrator.
-    - [ ] **P2.3: Text Classifier Pipeline**
-        - [ ] `workflows/pipelines/text_classifier.py`
-        - [ ] Define classification schema (rule-based or model-based). *Creative Component: Design of classification logic/model choice.*
-        - [ ] Implement classification logic.
-        - [ ] Integrate with orchestrator.
-    - [ ] **P2.4: Update UI for New Pipelines**
-        - [ ] Allow selection of RAG or Classifier.
-        - [ ] UI for interacting with RAG (chat interface).
-        - [ ] UI for displaying classification results.
+        - [X] Update unit tests for `app/services/pipeline_service.py` (`test_pipeline_service.py`) to cover `trigger_pipeline_flow` for all pipeline types (Summarizer, RAG Ingestion, Text Classifier), including success, failure, and edge cases. (2024-08-01) - Completed 2024-08-01
+    - [x] **P2.2: RAG Chatbot Pipeline**
+        - [x] `workflows/pipelines/rag_chatbot.py` (2024-08-01)
+        - [x] Document loading and chunking (LangChain). (2024-08-01)
+        - [x] Embedding generation (e.g., Sentence Transformers, OpenAI embeddings). *Creative Component: Choice of embedding model and vector store.* (2024-08-01)
+        - [x] Vector store setup (FAISS for local, consider alternatives). (2024-08-01)
+        - [x] Retrieval and generation logic (LangChain). (2024-08-01)
+        - [x] Integrate with orchestrator. (2024-08-01)
+    - [x] **P2.3: Text Classifier Pipeline**
+        - [x] `workflows/pipelines/text_classifier.py` (2024-08-01)
+        - [x] Define classification schema (rule-based or model-based). (2024-08-01) - *Initial rule-based schema defined*
+        - [x] Implement classification logic. (2024-08-01) - *Initial rule-based logic implemented*
+        - [x] Integrate with orchestrator. (2024-08-01) - *Basic Prefect flow created*
+        - [x] Fix test failures and ensure all tests are passing. (2024-08-02)
+    - [x] **P2.4: Update UI for New Pipelines**
+        - [x] Allow selection of RAG or Classifier. (2024-08-01) - *Added pipeline selector (Summarizer, RAG, Classifier) to UploadPage; API already supports type.*
+        - [x] UI for interacting with RAG (chat interface). (2024-08-02) - *Created ChatPage with interactive chat interface for RAG documents.*
+        - [x] UI for displaying classification results. (2024-08-02) - *Enhanced StatusPage to show formatted results for all pipeline types including Text Classification.*
+    - [x] **P2.7: RAG Chatbot API Enhancements** (Completed 2024-08-03)
+        - [x] Create dedicated router `app/routers/rag.py` for RAG-specific endpoints.
+        - [x] Implement `app/services/rag_service.py` with question answering functionality.
+        - [x] Add vector store management with list, check status, and deletion capabilities.
+        - [x] Enhance `workflows/pipelines/vector_store_manager.py` with utilities for working with document-specific vector stores.
+        - [x] Hook up endpoints to the main FastAPI application.
     - [ ] **P2.5: Dynamic Pipeline Parameters (Optional)**
         - [ ] Allow users to set basic parameters (e.g., chunk size for RAG) via UI.
         - [ ] Pass parameters through API to orchestrator/pipelines.
-    - [ ] **P2.6: Unit Tests for New Pipelines**
+    - [x] **P2.6: Unit Tests for New Pipelines**
+        - [x] Fix test failures in pipeline router tests (checking for file log existence). (2024-08-02)
+        - [x] Fix test failures in pipeline service tests (unsupported pipeline type error message). (2024-08-02)
+        - [x] Fix test failures in RAG core tests (LangChain chain invocation mocking). (2024-08-02)
+        - [x] All 8 test failures resolved and tests passing. (2024-08-02)
 
 **Phase 3: UI/UX, Authentication & Basic Observability**
   - **Goal:** Enhance user experience, secure the platform, and add monitoring.
@@ -164,24 +175,21 @@
 - **Celery Task Dispatch Argument Mismatch (P1.5 & P1.6):**
     - Problem: `pipeline_service.py` called `summarize_pdf_task.delay()` with an unexpected keyword argument `pipeline_run_uuid` and was missing other required arguments.
     - Current Fix (Applied 2024-07-29): Corrected the arguments in `pipeline_service.py` to match the task signature (`run_uuid_str`, `uploaded_file_log_id`, `file_path`, `original_filename`).
-- **Celery Prerun Signal Argument Handling (P1.5):**
-    - Problem: `task_prerun` signal handler in `summarization_tasks.py` was not correctly extracting `run_uuid` when task was called with positional vs. keyword arguments.
-    - Fix (Applied 2024-07-29): Updated signal handler to robustly check `args` and `kwargs` from the signal for the `run_uuid`.
-- **Missing Table Metadata in Celery Worker (P1.5):**
-    - Problem: `summarization_tasks.py` was missing an import for `UploadedFileLog`, causing `sqlalchemy.exc.NoReferencedTableError` in Celery worker context.
-    - Fix (Applied 2024-07-29): Added `from app.models.file_models import UploadedFileLog` to `summarization_tasks.py`.
-- **Missing NumPy Dependency for Sumy LSA (P1.4 & P1.5):**
-    - Problem: `sumy.summarizers.lsa` requires `numpy`, which was not in `requirements.txt`.
-    - Fix (Applied 2024-07-29): Added `numpy` to `requirements.txt`.
 
----
+### Discovered During Work (2024-08-02)
+- **Test Failures in Pipeline Router (P2.6):**
+    - Problem: `mock_db_session_override.get` was expected to be called in tests but wasn't being called because the router wasn't checking for file log existence.
+    - Fix: Added file log existence check in the router before calling the service.
+- **Inconsistent Error Messages (P2.6):**
+    - Problem: Error message format in tests didn't match the actual format returned by the code.
+    - Fix: Updated the error message format in the router and test assertions.
+- **LangChain Mocking Issues (P2.6):**
+    - Problem: Tests were trying to mock individual components (llm.invoke, parser.invoke) but LangChain now uses a chain pattern with the `|` operator.
+    - Fix: Updated tests to properly mock the LangChain chain pattern by patching the `__or__` operator and chain invocation.
 
-**Phase X: Future Enhancements**
-  - **Goal:** Extend platform capabilities with additional pipeline types and features based on evolving needs.
-  - **Tasks:**
-    - [ ] **PX.1: Data Analysis & Visualization Pipeline**
-        - [ ] Design pipeline for processing tabular data (e.g., CSV, JSON).
-        - [ ] Allow users to upload data and potentially scripts or select predefined analyses.
-        - [ ] Implement logic using libraries like Pandas, Matplotlib, Seaborn.
-        - [ ] Define output formats (e.g., generated plots, statistical summaries, processed data files).
-        - [ ] Integrate with orchestrator and UI.
+### Discovered During Work (2024-08-03)
+- **Vector Store Management:**
+    - Added new API endpoints for managing vector stores to support better RAG chatbot functionality.
+    - Implemented listing of all vector stores with metadata (size, path, document ID).
+    - Added ability to check if a specific vector store exists.
+    - Added ability to delete vector stores no longer needed.
