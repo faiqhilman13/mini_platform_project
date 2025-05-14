@@ -220,7 +220,15 @@ function StatusPage() {
       )}
 
       {pipelineData && (
-        <div style={{ marginTop: 20, padding: 10, border: '1px solid #eee', borderRadius: 4, backgroundColor: '#f8f9fa' }}>
+        <div 
+          className="info-box"
+          style={{
+            marginTop: 20, 
+            padding: 10, 
+            border: '1px solid #eee', 
+            borderRadius: 4, 
+            backgroundColor: '#f8f9fa',
+          }}>
           <h3>Pipeline Status Details:</h3>
           <div style={{ marginBottom: 15 }}>
             <p><strong>Run ID:</strong> {pipelineData.run_uuid}</p>

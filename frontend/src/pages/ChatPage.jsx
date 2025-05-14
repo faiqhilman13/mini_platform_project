@@ -94,7 +94,15 @@ function ChatPage() {
     <div style={{ maxWidth: 800, margin: 'auto', padding: 20 }}>
       <h2>RAG Chatbot</h2>
       {pipelineData && (
-        <div style={{ marginBottom: 20, padding: 10, border: '1px solid #eee', borderRadius: 4, backgroundColor: '#f8f9fa' }}>
+        <div 
+          className="info-box"
+          style={{ 
+            marginBottom: 20, 
+            padding: 10, 
+            border: '1px solid #eee', 
+            borderRadius: 4, 
+            backgroundColor: '#f8f9fa',
+          }}>
           <h3>Document Information</h3>
           <p><strong>Pipeline ID:</strong> {runId}</p>
           <p><strong>Status:</strong> {pipelineData.status}</p>
@@ -135,7 +143,8 @@ function ChatPage() {
               backgroundColor: msg.isError ? '#ffcccc' : 
                               msg.role === 'user' ? '#e3f2fd' : 
                               msg.role === 'system' ? '#f5f5f5' : '#e8f5e9',
-              textAlign: 'left'
+              textAlign: 'left',
+              color: msg.isError ? '#a00' : '#333'
             }}>
               <p style={{ margin: '0', wordBreak: 'break-word' }}>{msg.content}</p>
               

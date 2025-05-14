@@ -51,4 +51,26 @@ Throughout Phase 1, several debugging challenges provided valuable learning oppo
 *   **User-Driven Tooling Choices:** Actively discussing and deciding on tools (e.g., React, and now Prefect) based on the project's learning goals and real-world relevance ensures the project remains aligned with its objectives.
 *   **Type Hinting & Pydantic:** FastAPI and SQLModel's reliance on Python type hints and Pydantic provided strong auto-validation and clear data contracts, which helped catch errors early, both in development and during testing.
 
+## 4. Skills Developed & Demonstrated (Through Phase 2 & Early Phase 3)
+
+This project has provided a rich environment for developing and showcasing a diverse set of skills crucial for modern platform and AI application engineering:
+
+*   **Full-Stack Development:**
+    *   **Backend:** Proficiently built and iteratively refined a FastAPI backend, incorporating Pydantic for robust data validation, SQLModel for database interactions, and structured service layers for business logic. Managed configuration, routing, and API endpoint design.
+    *   **Frontend:** Developed a React-based frontend, including components for file uploads, status display, and an interactive chat interface. Handled API communication and basic state management.
+*   **AI/ML Pipeline Implementation:**
+    *   **RAG Systems:** Successfully designed and implemented a complex Retrieval Augmented Generation (RAG) pipeline, including document loading, chunking (LangChain), embedding generation (HuggingFace models), vector store management (FAISS, including creation, persistence, and document-specific stores), and LLM integration (initially OpenAI, then adeptly switching to Ollama with `mistral`).
+    *   **Core NLP Tasks:** Implemented other NLP pipelines like summarization and a rule-based text classifier.
+    *   **LangChain Proficiency:** Demonstrated growing expertise in using LangChain for various components of the AI pipelines, including its chain paradigm and model interaction abstractions.
+*   **Workflow Orchestration & Task Management:**
+    *   Transitioned from Celery (Phase 1) to Prefect for workflow orchestration, defining tasks and flows, and integrating them with the backend services. This involved understanding Prefect's core concepts and adapting the system architecture.
+*   **System Integration & Debugging:**
+    *   **Cross-Cutting Concerns:** Effectively diagnosed and resolved numerous challenging issues that spanned the entire stack, such as environment variable loading (`.env` files, Pydantic settings validation), dependency conflicts (e.g., `prefect` and `griffe`), API key management, and data flow problems between frontend, backend, and AI pipelines.
+    *   **Problem-Solving & Persistence:** Showcased strong analytical and debugging skills, persistently working through complex errors (e.g., the empty `.env` file mystery, Pydantic's `extra_forbidden` error, LangChain deprecations, `ModuleNotFoundError` with `griffe`).
+    *   **Attention to Detail:** Addressed subtle bugs related to file paths, model saving/loading locations, and configuration mismatches.
+*   **Testing & Quality Assurance:**
+    *   Gained significant experience with unit testing in Pytest, including mocking database sessions, external service calls, and handling asynchronous code. Addressed challenges related to Pydantic V2 strictness and Enum validation in tests.
+*   **Adaptability & Learning:** Quickly learned and adapted to new tools and libraries (e.g., Prefect, Ollama integration) and effectively addressed deprecation warnings by migrating to newer APIs (e.g., LangChain updates).
+*   **Platform Engineering Mindset:** Began to think beyond individual features towards platform-level concerns like asynchronous processing, UI/UX, and overall system robustness, as evidenced by recent discussions.
+
 This document will be updated as the project progresses through further phases. 

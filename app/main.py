@@ -1,3 +1,6 @@
+from dotenv import load_dotenv
+load_dotenv()
+
 # CURSOR: This file should only handle route wiring, not business logic.
 # All logic must be called from services/ or utils/
 

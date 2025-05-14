@@ -15,7 +15,7 @@ from dotenv import load_dotenv
 load_dotenv() 
 
 # Initialize and ensure data directories from rag_config before other imports that might use them
-from .rag_config import DOCUMENTS_DIR, ensure_data_directories_exist
+from .rag_config import DOCUMENTS_DIR, ensure_data_directories_exist, VECTORSTORE_DIR
 ensure_data_directories_exist() # Call this early
 
 from .model_loader import initialize_embedding_model, initialize_cross_encoder
@@ -70,9 +70,16 @@ def process_pdf_for_rag(file_path: str, doc_id: Optional[str] = None, title: Opt
         # Initialize embedding model (from model_loader)
         embedding_model = initialize_embedding_model()
         
+        # Construct the specific vector store path for this document
+        doc_vectorstore_path = os.path.join(str(VECTORSTORE_DIR), doc_id)
+        
         # Load or create vector store (from vector_store_manager)
         # This function now uses document_chunks to add to the store if they exist
-        _ = load_or_create_vectorstore(embedding_model, chunks) # Result not directly used here
+        _ = load_or_create_vectorstore(
+            embedding_model=embedding_model, 
+            document_chunks=chunks,
+            vectorstore_path=doc_vectorstore_path # Pass the specific path
+        )
         
         return {
             "status": "success",

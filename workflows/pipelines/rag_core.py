@@ -3,14 +3,16 @@ Core RAG pipeline tasks: context retrieval and answer generation.
 """
 import logging
 from typing import List, Optional, Dict, Any
+from dotenv import load_dotenv, find_dotenv
+# load_dotenv() # REMOVE global load_dotenv() from top of file if present
 
 from langchain_community.vectorstores import FAISS
 from langchain.schema import Document, StrOutputParser
 from sentence_transformers import CrossEncoder
-from langchain_openai import ChatOpenAI
+from langchain_community.chat_models import ChatOllama
 from langchain.prompts import ChatPromptTemplate
 
-from .rag_config import INITIAL_RETRIEVAL_K, FINAL_RETRIEVAL_K, LLM_MODEL_NAME
+from .rag_config import INITIAL_RETRIEVAL_K, FINAL_RETRIEVAL_K
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +39,7 @@ def retrieve_context(vectorstore: FAISS, question: str,
             search_type="similarity",
             search_kwargs={"k": INITIAL_RETRIEVAL_K if cross_encoder else top_k}
         )
-        initial_docs = retriever.get_relevant_documents(question)
+        initial_docs = retriever.invoke(question)
         logger.info(f"Initial retrieval returned {len(initial_docs)} documents")
         
         if not initial_docs:
@@ -117,9 +119,8 @@ Context:
     )
 
     try:
-        # Initialize the LLM
-        # Assumes OPENAI_API_KEY is set in the environment (loaded by main script)
-        llm = ChatOpenAI(model_name=LLM_MODEL_NAME, temperature=0.1) 
+        # Initialize the LLM with Ollama
+        llm = ChatOllama(model="mistral", temperature=0.1) 
 
         # Create the chain
         chain = prompt_template | llm | StrOutputParser()

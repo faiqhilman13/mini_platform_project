@@ -135,4 +135,8 @@ cython_debug/
 # Secrets - Be sure to add any other secret files here too
 secrets.py
 *.key
-*.pem 
+*.pem
+
+# User uploads and data directories
+/uploaded_files/
+/data/ 

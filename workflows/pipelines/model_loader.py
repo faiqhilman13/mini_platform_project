@@ -2,7 +2,7 @@
 Functions for initializing and loading embedding and cross-encoder models.
 """
 import logging
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 from sentence_transformers import CrossEncoder
 from .rag_config import EMBEDDING_MODEL_NAME, CROSS_ENCODER_MODEL_NAME
 
