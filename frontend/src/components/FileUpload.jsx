@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 
 /**
  * FileUpload component for uploading files (PDF for now).
@@ -6,12 +6,42 @@ import React, { useRef, useState } from 'react';
  * Props:
  *   onUpload: function(file: File) => void
  *   accept: string (accepted file types, e.g. 'application/pdf')
+ *   disabled: boolean (optional)
+ *   _forceUploading: boolean (optional, for Storybook)
+ *   _forceError: string (optional, for Storybook)
+ *   _forceSelectedFile: File (optional, for Storybook)
  */
-function FileUpload({ onUpload, accept = 'application/pdf' }) {
+function FileUpload({ 
+  onUpload, 
+  accept = 'application/pdf', 
+  disabled = false,
+  _forceUploading,
+  _forceError,
+  _forceSelectedFile
+}) {
   const fileInputRef = useRef(null);
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [error, setError] = useState('');
-  const [uploading, setUploading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(_forceSelectedFile || null);
+  const [error, setError] = useState(_forceError || '');
+  const [uploading, setUploading] = useState(Boolean(_forceUploading) || false);
+
+  // For Storybook to control component state
+  useEffect(() => {
+    if (_forceUploading !== undefined) {
+      setUploading(Boolean(_forceUploading));
+    }
+  }, [_forceUploading]);
+
+  useEffect(() => {
+    if (_forceError !== undefined) {
+      setError(_forceError);
+    }
+  }, [_forceError]);
+
+  useEffect(() => {
+    if (_forceSelectedFile !== undefined) {
+      setSelectedFile(_forceSelectedFile);
+    }
+  }, [_forceSelectedFile]);
 
   const handleFileChange = (e) => {
     setError('');
@@ -45,37 +75,49 @@ function FileUpload({ onUpload, accept = 'application/pdf' }) {
       setSelectedFile(null);
       if (fileInputRef.current) fileInputRef.current.value = ''; 
     } finally {
-      setUploading(false);
+      // Only clear the uploading state if we're not forcing it for Storybook
+      if (_forceUploading === undefined) {
+        setUploading(false);
+      }
     }
   };
 
   return (
-    <div style={{ border: '1px solid #eee', padding: 24, borderRadius: 8, maxWidth: 400, fontFamily: 'Arial, sans-serif' }}>
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept={accept}
-        onChange={handleFileChange}
-        disabled={uploading}
-        style={{ marginBottom: 12, display: 'block' }}
-      />
-      <button 
-        onClick={handleUploadClick} 
-        disabled={uploading || !selectedFile} 
-        style={{
-          marginRight: 8, 
-          padding: '8px 16px', 
-          cursor: (uploading || !selectedFile) ? 'not-allowed' : 'pointer',
-          backgroundColor: (uploading || !selectedFile) ? '#ccc' : '#007bff',
-          color: 'white',
-          border: 'none',
-          borderRadius: '4px'
-        }}
-      >
-        {uploading ? 'Uploading...' : 'Upload'}
-      </button>
-      {selectedFile && <span style={{ marginLeft: '8px', verticalAlign: 'middle' }}>{selectedFile.name}</span>}
-      {error && <div style={{ color: 'red', marginTop: 12, fontSize: '0.9em' }}>{error}</div>}
+    <div className="card">
+      <div className="form-group">
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept={accept}
+          onChange={handleFileChange}
+          disabled={uploading || disabled}
+          className="form-control mb-3" 
+        />
+        
+        <div className="d-flex align-items-center">
+          <button 
+            onClick={handleUploadClick} 
+            disabled={uploading || !selectedFile || disabled}
+            className="form-control"
+          >
+            {uploading ? (
+              <span><div className="loading"></div> Uploading...</span>
+            ) : (
+              'Upload'
+            )}
+          </button>
+          
+          {selectedFile && (
+            <div className="ml-2 mt-2">
+              <strong>Selected:</strong> {selectedFile.name}
+            </div>
+          )}
+        </div>
+      </div>
+      
+      {error && (
+        <div className="alert alert-danger mt-3">{error}</div>
+      )}
     </div>
   );
 }

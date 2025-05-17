@@ -91,51 +91,62 @@ function UploadPage() {
   }, [pollingIntervalId]);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: 40, padding: 20, maxWidth: 600, margin: '40px auto', border: '1px solid #ccc', borderRadius: 8 }}>
-      <h2>Upload a PDF File</h2>
+    <div className="container">
+      <h2 className="mb-4">Upload a PDF File</h2>
       <FileUpload onUpload={handleUpload} accept="application/pdf" disabled={isLoading} />
+      
       {uploadMessage && (
-        <div style={{ color: uploadSuccess ? 'green' : 'red', marginTop: 16 }}>
+        <div className={`alert ${uploadSuccess ? 'alert-success' : 'alert-danger'} mt-3`}>
           {uploadMessage}
           {uploadSuccess && fileLogId && <span> (File Log ID: {fileLogId})</span>}
         </div>
       )}
 
       {uploadSuccess && fileLogId && (
-        <div style={{ marginTop: 20, borderTop: '1px solid #eee', paddingTop: 20, width: '100%' }}>
-          <h3>Select Pipeline</h3>
-          <select 
-            value={selectedPipeline} 
-            onChange={(e) => setSelectedPipeline(e.target.value)} 
-            disabled={isLoading}
-            style={{ padding: 8, marginRight: 10, minWidth: 200 }}
-          >
-            <option value={PipelineType.PDF_SUMMARIZER}>PDF Summarizer</option>
-            <option value={PipelineType.RAG_CHATBOT}>RAG Chatbot</option>
-            <option value={PipelineType.TEXT_CLASSIFIER}>Text Classifier</option>
-          </select>
-          <button onClick={handleTriggerPipeline} disabled={isLoading || !fileLogId} style={{ padding: '8px 16px' }}>
-            {isLoading ? 'Processing...' : 'Trigger Pipeline'}
-          </button>
+        <div className="card mt-4">
+          <h3 className="mb-3">Select Pipeline</h3>
+          <div className="form-group">
+            <select 
+              className="form-control mb-3"
+              value={selectedPipeline} 
+              onChange={(e) => setSelectedPipeline(e.target.value)} 
+              disabled={isLoading}
+            >
+              <option value={PipelineType.PDF_SUMMARIZER}>PDF Summarizer</option>
+              <option value={PipelineType.RAG_CHATBOT}>RAG Chatbot</option>
+              <option value={PipelineType.TEXT_CLASSIFIER}>Text Classifier</option>
+            </select>
+            <button 
+              onClick={handleTriggerPipeline} 
+              disabled={isLoading || !fileLogId} 
+              className="form-control"
+            >
+              {isLoading ? (
+                <span><div className="loading"></div> Processing...</span>
+              ) : (
+                'Trigger Pipeline'
+              )}
+            </button>
+          </div>
         </div>
       )}
 
       {pipelineMessage && (
-        <div style={{ marginTop: 16, color: pipelineRun && pipelineRun.status === 'FAILED' ? 'red' : 'blue' }}>
+        <div className={`alert ${pipelineRun && pipelineRun.status === 'FAILED' ? 'alert-danger' : 'alert-info'} mt-3`}>
           {pipelineMessage}
         </div>
       )}
 
       {pipelineRun && pipelineRun.status === 'COMPLETED' && (
-        <div style={{ marginTop: 20, borderTop: '1px solid #eee', paddingTop: 20, width: '100%' }}>
-          <h4>Pipeline Result:</h4>
+        <div className="result-container">
+          <h4 className="mb-3">Pipeline Result:</h4>
           {selectedPipeline === PipelineType.PDF_SUMMARIZER && (
-            <pre style={{ whiteSpace: 'pre-wrap', backgroundColor: '#f5f5f5', padding: 10, borderRadius: 4 }}>
+            <pre>
               {pipelineRun.result ? JSON.stringify(pipelineRun.result, null, 2) : 'No result data.'}
             </pre>
           )}
           {selectedPipeline === PipelineType.TEXT_CLASSIFIER && (
-             <p><strong>Category:</strong> {pipelineRun.result ? pipelineRun.result.category : 'N/A'}</p>
+             <p className="mb-0"><strong>Category:</strong> {pipelineRun.result ? pipelineRun.result.category : 'N/A'}</p>
           )}
           {/* RAG Chatbot interface will be handled differently, likely a new component */} 
         </div>

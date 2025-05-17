@@ -165,6 +165,28 @@
     - [ ] **P3.2: JWT Authentication**
         - [ ] Implement token-based auth (e.g., `FastAPI-Users` or custom).
 
+**Phase 4: Asynchronous Operations & Enhanced UX (Date: <YYYY-MM-DD>)**
+  - **Goal:** Improve platform responsiveness and user experience through asynchronous pipeline execution and UI modernization.
+  - **Tasks:**
+    - [ ] **P4.1: Asynchronous Pipeline Execution with Prefect**
+        - [ ] Research and decide on Prefect asynchronous execution model (e.g., deployments with agent/work-queue, or simpler async flow invocation).
+        - [ ] Refactor `app/services/pipeline_service.py` to trigger Prefect flows asynchronously. The service should return a job/run ID immediately.
+        - [ ] Ensure `PipelineRun` status (QUEUED, PROCESSING, COMPLETED, FAILED) is correctly updated by the asynchronous Prefect flows.
+        - [ ] Verify database interactions and logging within async flows.
+        - [ ] Update relevant unit tests for asynchronous behavior.
+    - [ ] **P4.2: Frontend UI - Modernization & Styling**
+        - [ ] Review existing CSS in `frontend/src/App.css` and component-specific styles.
+        - [ ] Refactor and enhance CSS for a more sleek, modern, and consistent look and feel across all pages (`UploadPage.jsx`, `ChatPage.jsx`, `StatusPage.jsx`, etc.).
+        - [ ] Improve layout, typography, color palette, and use of white space.
+        - [ ] (Optional/Discuss) Evaluate and potentially integrate a lightweight, modern UI component library if custom CSS becomes too cumbersome, keeping `PLANNING.MD` constraints in mind.
+    - [ ] **P4.3: Frontend UI - Multi-Pipeline Selection & Batch Operations**
+        - [ ] Design UI elements on `UploadPage.jsx` (or a new dedicated page/modal) to allow users to select an uploaded document and then choose multiple pipelines (RAG, Summarizer, Classifier) to run against it.
+        - [ ] Implement frontend logic to gather these selections.
+        - [ ] Design and implement a new backend API endpoint (e.g., `/pipelines/trigger_batch`) to accept requests for running multiple pipelines on a single document.
+        - [ ] Update `app/services/pipeline_service.py` (or a new service method) to handle batch requests, creating multiple `PipelineRun` entries and dispatching multiple asynchronous Prefect flows.
+        - [ ] Enhance `StatusPage.jsx` or create a new view to display the status of batch jobs and their individual sub-pipeline runs.
+        - [ ] Update relevant unit tests for batch operations.
+
 ### Discovered During Work (2024-07-29)
 - **Celery Task `AttributeError: 'str' object has no attribute 'hex'` (P1.5):** 
     - Problem: `run_uuid` (string) was used directly in SQLModel query within Celery task, expecting a `UUID` object.
