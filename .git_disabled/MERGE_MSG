@@ -1,0 +1,19 @@
+Merge branch 'main' of https://github.com/faiqhilman13/mini_platform_project
+
+# Conflicts:
+#	.gitignore
+#	TASK_DS.md
+#	app/main.py
+#	app/models/file_models.py
+#	app/models/ml_models.py
+#	app/routers/pipelines.py
+#	app/routers/upload.py
+#	app/services/data_profiling_service.py
+#	app/services/file_service.py
+#	app/services/pipeline_service.py
+#	architecture.md
+#	mini_idp.db
+#	uploaded_files/faiq CV.pdf
+#	workflows/ml/evaluation.py
+#	workflows/ml/preprocessing.py
+#	workflows/pipelines/ml_training.py
