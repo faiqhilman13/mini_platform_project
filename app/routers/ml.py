@@ -145,10 +145,14 @@ def get_ml_models(
             evaluation_results = ml_result.get("evaluation_results", [])
             training_results = ml_result.get("training_results", [])
             
-            # Create a lookup for training times
+            # Create lookups for training data
             training_times = {}
+            hyperparameters_lookup = {}
             for training_result in training_results:
-                training_times[training_result.get("algorithm_name")] = training_result.get("training_time", 0)
+                algorithm_name = training_result.get("algorithm_name")
+                training_times[algorithm_name] = training_result.get("training_time", 0)
+                # Extract hyperparameters from training_result
+                hyperparameters_lookup[algorithm_name] = training_result.get("hyperparameters", {})
             
             for idx, eval_result in enumerate(evaluation_results):
                 if not eval_result.get("error"):
@@ -157,7 +161,7 @@ def get_ml_models(
                         "model_id": f"{run_uuid}_{idx}",
                         "pipeline_run_id": str(run_uuid),
                         "algorithm_name": algorithm_name,
-                        "hyperparameters": {},  # Could extract from training_results if needed
+                        "hyperparameters": hyperparameters_lookup.get(algorithm_name, {}),
                         "performance_metrics": eval_result.get("metrics", {}),
                         "model_path": "",  # Could extract from training_results if needed
                         "feature_importance": eval_result.get("feature_importance"),

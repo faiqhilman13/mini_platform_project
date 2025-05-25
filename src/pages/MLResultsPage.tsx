@@ -82,7 +82,7 @@ const ModelRow = ({ model, isBest, onViewDetails, problemType }: ModelRowProps) 
   const metrics = model.performance_metrics;
   
   const getPrimaryMetric = () => {
-    if (problemType === 'CLASSIFICATION') {
+    if (problemType.toLowerCase() === 'classification') {
       return {
         name: 'Accuracy',
         value: metrics.accuracy?.toFixed(4) || 'N/A',
@@ -215,21 +215,29 @@ const MLResultsPage = () => {
   };
 
   const getBestModel = () => {
-    if (!pipelineRun?.best_model_id) return null;
-    return models.find(model => model.model_id === pipelineRun.best_model_id);
+    if (!pipelineRun?.best_model_id) {
+      return null;
+    }
+    
+    const bestModel = models.find(model => model.algorithm_name === pipelineRun.best_model_id);
+    
+    return bestModel;
   };
 
   const getOverallStats = () => {
-    if (models.length === 0) return null;
+    if (models.length === 0) {
+      return null;
+    }
     
     const bestModel = getBestModel();
+    
     const totalTrainingTime = models.reduce((sum, model) => sum + (model.training_time || 0), 0);
     
     let primaryMetricValue = 'N/A';
     let primaryMetricName = '';
     
     if (bestModel) {
-      if (pipelineRun?.problem_type === 'CLASSIFICATION') {
+      if (pipelineRun?.problem_type?.toLowerCase() === 'classification') {
         primaryMetricValue = bestModel.performance_metrics.accuracy?.toFixed(4) || 'N/A';
         primaryMetricName = 'Accuracy';
       } else {
@@ -238,13 +246,15 @@ const MLResultsPage = () => {
       }
     }
     
-    return {
+    const stats = {
       bestScore: primaryMetricValue,
       bestScoreName: primaryMetricName,
       totalModels: models.length,
       totalTime: totalTrainingTime.toFixed(2),
       bestAlgorithm: bestModel?.algorithm_name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'N/A'
     };
+    
+    return stats;
   };
 
     const handleViewDetails = (model: MLModel) => {    setSelectedModel(model);  };
@@ -449,14 +459,13 @@ const MLResultsPage = () => {
                   <tbody>
                     {models
                       .sort((a, b) => {
-                        // Sort by best model first, then by primary metric
                         if (bestModel && a.model_id === bestModel.model_id) return -1;
                         if (bestModel && b.model_id === bestModel.model_id) return 1;
                         
-                        const metricA = pipelineRun?.problem_type === 'CLASSIFICATION' 
+                        const metricA = pipelineRun?.problem_type?.toLowerCase() === 'classification' 
                           ? a.performance_metrics?.accuracy || 0
                           : a.performance_metrics?.r2 || 0;
-                        const metricB = pipelineRun?.problem_type === 'CLASSIFICATION'
+                        const metricB = pipelineRun?.problem_type?.toLowerCase() === 'classification'
                           ? b.performance_metrics?.accuracy || 0
                           : b.performance_metrics?.r2 || 0;
                         
@@ -483,7 +492,72 @@ const MLResultsPage = () => {
           </CardContent>
         </Card>
 
-        {/* Model Details Modal/Section */}        {selectedModel && (          <ModelDetails            model={selectedModel}            problemType={pipelineRun.problem_type || 'unknown'}            isBest={selectedModel.model_id === pipelineRun.best_model_id}            className="mb-8"          />        )}        {/* Pipeline Configuration Summary */}        <Card>          <CardHeader>            <CardTitle className="flex items-center">              <Target className="h-5 w-5 mr-2 text-gray-600" />              Pipeline Configuration            </CardTitle>          </CardHeader>          <CardContent>            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">              <div>                <h4 className="text-sm font-medium text-gray-900 mb-2">Problem Type</h4>                <p className="text-sm text-gray-600 capitalize">                  {pipelineRun.problem_type ? pipelineRun.problem_type.toLowerCase() : 'Unknown'}                </p>              </div>                            <div>                <h4 className="text-sm font-medium text-gray-900 mb-2">Target Variable</h4>                <p className="text-sm text-gray-600">                  {pipelineRun.target_variable || 'Not specified'}                </p>              </div>                            <div>                <h4 className="text-sm font-medium text-gray-900 mb-2">Algorithms</h4>                <p className="text-sm text-gray-600">                  {models.length} configured                </p>              </div>                            {pipelineRun.preprocessing_config && (                <>                  <div>                    <h4 className="text-sm font-medium text-gray-900 mb-2">Missing Values</h4>                    <p className="text-sm text-gray-600 capitalize">                      {pipelineRun.preprocessing_config.missing_strategy || 'Not specified'}                    </p>                  </div>                                    <div>                    <h4 className="text-sm font-medium text-gray-900 mb-2">Feature Scaling</h4>                    <p className="text-sm text-gray-600 capitalize">                      {pipelineRun.preprocessing_config.scaling_strategy || 'Not specified'}                    </p>                  </div>                                    <div>                    <h4 className="text-sm font-medium text-gray-900 mb-2">Test Split</h4>                    <p className="text-sm text-gray-600">                      {pipelineRun.preprocessing_config.test_size ?                         `${(pipelineRun.preprocessing_config.test_size * 100).toFixed(0)}%` :                         'Not specified'                      }                    </p>                  </div>                </>              )}            </div>          </CardContent>        </Card>
+        {/* Model Details Modal/Section */}
+        {selectedModel && (
+          <ModelDetails
+            model={selectedModel}
+            problemType={(pipelineRun.problem_type?.toUpperCase() as 'CLASSIFICATION' | 'REGRESSION') || 'CLASSIFICATION'}
+            isBest={selectedModel.model_id === pipelineRun.best_model_id}
+            className="mb-8"
+          />
+        )}
+
+        {/* Pipeline Configuration Summary */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Target className="h-5 w-5 mr-2 text-gray-600" />
+              Pipeline Configuration
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div>
+                <h4 className="text-sm font-medium text-gray-900 mb-2">Problem Type</h4>
+                <p className="text-sm text-gray-600 capitalize">
+                  {pipelineRun.problem_type ? pipelineRun.problem_type.toLowerCase() : 'Unknown'}
+                </p>
+              </div>
+              <div>
+                <h4 className="text-sm font-medium text-gray-900 mb-2">Target Variable</h4>
+                <p className="text-sm text-gray-600">
+                  {pipelineRun.target_variable || 'Not specified'}
+                </p>
+              </div>
+              <div>
+                <h4 className="text-sm font-medium text-gray-900 mb-2">Algorithms</h4>
+                <p className="text-sm text-gray-600">
+                  {models.length} configured
+                </p>
+              </div>
+              {pipelineRun.preprocessing_config && (
+                <>
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-900 mb-2">Missing Values</h4>
+                    <p className="text-sm text-gray-600 capitalize">
+                      {pipelineRun.preprocessing_config.missing_strategy || 'Not specified'}
+                    </p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-900 mb-2">Feature Scaling</h4>
+                    <p className="text-sm text-gray-600 capitalize">
+                      {pipelineRun.preprocessing_config.scaling_strategy || 'Not specified'}
+                    </p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-900 mb-2">Test Split</h4>
+                    <p className="text-sm text-gray-600">
+                      {pipelineRun.preprocessing_config.test_size ?
+                        `${(pipelineRun.preprocessing_config.test_size * 100).toFixed(0)}%` :
+                        'Not specified'
+                      }
+                    </p>
+                  </div>
+                </>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

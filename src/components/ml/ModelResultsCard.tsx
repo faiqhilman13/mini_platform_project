@@ -100,25 +100,38 @@ const ModelResultsCard = ({
           <>
             <h4 className="text-sm font-medium text-gray-700 mb-2">Feature Importance:</h4>
             <div className="space-y-2">
-              {Object.entries(model.feature_importance)
-                .sort((a, b) => b[1] - a[1])
-                .slice(0, 3)
-                .map(([feature, importance]) => (
-                  <div key={feature} className="flex items-center">
-                    <div className="text-xs text-gray-600 w-1/3 truncate" title={feature}>
-                      {feature}
-                    </div>
-                    <div className="w-2/3 flex items-center">
-                      <div 
-                        className="bg-blue-500 h-2 rounded"
-                        style={{ width: `${Math.min(100, importance * 100)}%` }}
-                      ></div>
-                      <span className="ml-2 text-xs text-gray-500">
-                        {(importance * 100).toFixed(1)}%
-                      </span>
-                    </div>
-                  </div>
-                ))}
+              {(() => {
+                // Normalize feature importance for display
+                const entries = Object.entries(model.feature_importance);
+                const maxValue = Math.max(...entries.map(([, value]) => Math.abs(value)));
+                const normalizedEntries = entries.map(([key, value]) => [
+                  key, 
+                  maxValue > 0 ? Math.abs(value) / maxValue : 0
+                ]);
+                
+                return normalizedEntries
+                  .sort((a, b) => (b[1] as number) - (a[1] as number))
+                  .slice(0, 3)
+                  .map(([feature, normalizedImportance]) => {
+                    const originalImportance = model.feature_importance?.[feature as string] || 0;
+                    return (
+                      <div key={feature as string} className="flex items-center">
+                        <div className="text-xs text-gray-600 w-1/3 truncate" title={feature as string}>
+                          {feature}
+                        </div>
+                        <div className="w-2/3 flex items-center">
+                          <div 
+                            className="bg-blue-500 h-2 rounded"
+                            style={{ width: `${(normalizedImportance as number) * 100}%` }}
+                          ></div>
+                          <span className="ml-2 text-xs text-gray-500">
+                            {originalImportance >= 1 ? originalImportance.toFixed(2) : (originalImportance * 100).toFixed(1) + '%'}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  });
+              })()}
             </div>
           </>
         )}

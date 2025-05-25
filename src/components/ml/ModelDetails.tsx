@@ -92,7 +92,26 @@ interface FeatureImportanceProps {
 }
 
 const FeatureImportance = ({ featureImportance, maxFeatures = 10 }: FeatureImportanceProps) => {
-  const sortedFeatures = Object.entries(featureImportance)
+  // Normalize feature importance values to ensure all bars are visible
+  const normalizeFeatureImportance = (importance: Record<string, number>) => {
+    const values = Object.values(importance);
+    const maxValue = Math.max(...values.map(v => Math.abs(v)));
+    
+    // If all values are very small or zero, return as-is
+    if (maxValue === 0) return importance;
+    
+    // Normalize to 0-1 range based on absolute values
+    const normalized: Record<string, number> = {};
+    Object.entries(importance).forEach(([key, value]) => {
+      normalized[key] = Math.abs(value) / maxValue;
+    });
+    
+    return normalized;
+  };
+
+  const normalizedImportance = normalizeFeatureImportance(featureImportance);
+  
+  const sortedFeatures = Object.entries(normalizedImportance)
     .sort(([, a], [, b]) => b - a)
     .slice(0, maxFeatures);
 
@@ -100,34 +119,41 @@ const FeatureImportance = ({ featureImportance, maxFeatures = 10 }: FeatureImpor
 
   return (
     <div className="space-y-3">
-      {sortedFeatures.map(([feature, importance], index) => (
-        <motion.div
-          key={feature}
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: index * 0.1 }}
-          className="flex items-center space-x-3"
-        >
-          <div className="flex-1">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-sm font-medium text-gray-700 truncate">
-                {feature}
-              </span>
-              <span className="text-xs text-gray-500">
-                {(importance * 100).toFixed(1)}%
-              </span>
+      {sortedFeatures.map(([feature, normalizedValue], index) => {
+        // Get the original value for display
+        const originalValue = featureImportance[feature];
+        const barWidth = (normalizedValue / maxImportance) * 100;
+        
+        return (
+          <motion.div
+            key={feature}
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: index * 0.1 }}
+            className="flex items-center space-x-3"
+          >
+            <div className="flex-1">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-sm font-medium text-gray-700 truncate">
+                  {feature}
+                </span>
+                <span className="text-xs text-gray-500">
+                  {originalValue >= 1 ? originalValue.toFixed(2) : (originalValue * 100).toFixed(1) + '%'}
+                </span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div
+                  className="bg-emerald-400 h-2 rounded-full transition-all duration-800"
+                  style={{ 
+                    width: `${barWidth}%`,
+                    minWidth: barWidth > 0 ? '2px' : '0px'
+                  }}
+                />
+              </div>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${(importance / maxImportance) * 100}%` }}
-                transition={{ duration: 0.8, delay: index * 0.1 }}
-                className="bg-gradient-to-r from-purple-500 to-blue-500 h-2 rounded-full"
-              />
-            </div>
-          </div>
-        </motion.div>
-      ))}
+          </motion.div>
+        );
+      })}
     </div>
   );
 };
@@ -204,9 +230,23 @@ interface HyperparameterDisplayProps {
 }
 
 const HyperparameterDisplay = ({ hyperparameters }: HyperparameterDisplayProps) => {
+  const entries = Object.entries(hyperparameters);
+  
+  if (entries.length === 0) {
+    return (
+      <div className="text-center py-8 text-gray-500">
+        <Settings className="h-8 w-8 text-gray-300 mx-auto mb-2" />
+        <p>No hyperparameters configured</p>
+        <p className="text-xs mt-1">
+          This algorithm uses default hyperparameters
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-      {Object.entries(hyperparameters).map(([key, value]) => (
+      {entries.map(([key, value]) => (
         <div key={key} className="bg-gray-50 p-3 rounded-lg">
           <div className="text-xs font-medium text-gray-600 uppercase tracking-wide mb-1">
             {key.replace(/_/g, ' ')}
