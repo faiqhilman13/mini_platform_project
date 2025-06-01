@@ -279,7 +279,7 @@ const ResultsExport = ({ pipelineRun, models, className }: ResultsExportProps) =
                     </div>
                     <div className="flex-1">
                       <h4 className="font-medium text-gray-900">{format.name}</h4>
-                      <p className="text-sm text-gray-600 mt-1">{format.description}</p>
+                      <p className="text-sm text-gray-300 mt-1">{format.description}</p>
                     </div>
                     {selectedFormats.has(format.id) && (
                       <CheckCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
@@ -292,7 +292,7 @@ const ResultsExport = ({ pipelineRun, models, className }: ResultsExportProps) =
 
           {/* Export Actions */}
           <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-gray-300">
               {selectedFormats.size} format{selectedFormats.size !== 1 ? 's' : ''} selected
             </div>
             

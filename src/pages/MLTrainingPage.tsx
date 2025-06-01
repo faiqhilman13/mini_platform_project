@@ -106,7 +106,7 @@ const MLTrainingPage = () => {
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading datasets...</p>
+            <p className="text-gray-300">Loading datasets...</p>
           </div>
         </div>
       </div>
@@ -127,7 +127,7 @@ const MLTrainingPage = () => {
               <Brain className="h-8 w-8 text-purple-600 mr-3" />
               ML Training Center
             </h1>
-            <p className="text-lg text-gray-600 mb-8">
+            <p className="text-lg text-black dark:text-gray-300 mb-8">
               Train machine learning models on your datasets with automated preprocessing and algorithm comparison
             </p>
           </motion.div>
@@ -181,8 +181,8 @@ const MLTrainingPage = () => {
                   <div className={`w-12 h-12 rounded-full ${step.color} flex items-center justify-center mx-auto mb-3`}>
                     {step.icon}
                   </div>
-                  <h3 className="font-medium text-gray-900 mb-2">{step.title}</h3>
-                  <p className="text-sm text-gray-600 mb-3">{step.description}</p>
+                  <h3 className="font-medium text-black dark:text-white mb-2">{step.title}</h3>
+                  <p className="text-sm text-black dark:text-gray-300 mb-3">{step.description}</p>
                   {step.action && (
                     <Button
                       variant="outline"
@@ -227,8 +227,8 @@ const MLTrainingPage = () => {
             ) : files.length === 0 ? (
               <div className="text-center py-8">
                 <Database className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No Datasets Found</h3>
-                <p className="text-gray-600 mb-4">
+                <h3 className="text-lg font-medium text-black dark:text-white mb-2">No Datasets Found</h3>
+                <p className="text-black dark:text-gray-300 mb-4">
                   Upload CSV or Excel files to start training ML models.
                 </p>
                 <Button onClick={() => navigate('/upload')}>
@@ -302,9 +302,9 @@ const MLTrainingPage = () => {
                 >
                   <div className="flex items-center mb-3">
                     {category.icon}
-                    <h3 className="text-lg font-medium text-gray-900 ml-2">{category.title}</h3>
+                    <h3 className="text-lg font-medium text-black dark:text-black ml-2">{category.title}</h3>
                   </div>
-                  <p className="text-gray-600 mb-4">{category.description}</p>
+                  <p className="text-black dark:text-black mb-4">{category.description}</p>
                   <div className="space-y-2">
                     {category.algorithms.map((algorithm) => (
                       <div key={algorithm} className="text-sm text-gray-700 flex items-center">
@@ -324,8 +324,8 @@ const MLTrainingPage = () => {
           <CardContent className="p-6">
             <div className="text-center">
               <Brain className="h-12 w-12 text-purple-600 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Ready to Start?</h3>
-              <p className="text-gray-600 mb-4">
+              <h3 className="text-lg font-medium text-black dark:text-white mb-2">Ready to Start?</h3>
+              <p className="text-black dark:text-white mb-4">
                 Upload a dataset or select from your existing files to begin training machine learning models.
               </p>
               <div className="flex justify-center space-x-3">

@@ -25,7 +25,7 @@ const RecentFilesList = ({
     return (
       <div className="flex justify-center items-center py-12">
         <Spinner size="md" />
-        <span className="ml-3 text-sm text-gray-500">Loading files...</span>
+        <span className="ml-3 text-sm text-gray-300">Loading files...</span>
       </div>
     );
   }
@@ -34,8 +34,8 @@ const RecentFilesList = ({
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
         <FileX className="h-12 w-12 text-red-500 mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-1">Failed to load files</h3>
-        <p className="text-sm text-gray-500 mb-4">{error}</p>
+        <h3 className="text-lg font-medium text-white mb-1">Failed to load files</h3>
+        <p className="text-sm text-gray-300 mb-4">{error}</p>
       </div>
     );
   }
@@ -44,15 +44,15 @@ const RecentFilesList = ({
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
         <FileX className="h-12 w-12 text-gray-400 mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-1">No files uploaded yet</h3>
-        <p className="text-sm text-gray-500">Upload a file to get started</p>
+        <h3 className="text-lg font-medium text-white mb-1">No files uploaded yet</h3>
+        <p className="text-sm text-gray-300">Upload a file to get started</p>
       </div>
     );
   }
 
   return (
     <div className={className}>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="space-y-3">
         {files.map((file) => (
           <FileCard
             key={file.id}

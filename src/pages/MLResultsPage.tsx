@@ -40,10 +40,10 @@ const MetricCard = ({ title, value, subtitle, icon, color, trend }: MetricCardPr
     <CardContent className="p-6">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium text-gray-600">{title}</p>
-          <p className="text-2xl font-bold text-gray-900 mt-1">{value}</p>
+          <p className="text-sm font-medium text-black dark:text-white">{title}</p>
+          <p className="text-2xl font-bold text-black dark:text-white mt-1">{value}</p>
           {subtitle && (
-            <p className="text-xs text-gray-500 mt-1">{subtitle}</p>
+            <p className="text-xs text-black dark:text-white mt-1">{subtitle}</p>
           )}
         </div>
         <div className={cn('p-3 rounded-full', color)}>
@@ -64,7 +64,7 @@ const MetricCard = ({ title, value, subtitle, icon, color, trend }: MetricCardPr
           )}>
             {Math.abs(trend.value).toFixed(1)}%
           </span>
-          <span className="text-sm text-gray-500 ml-1">vs baseline</span>
+          <span className="text-sm text-black dark:text-white ml-1">vs baseline</span>
         </div>
       )}
     </CardContent>
@@ -106,8 +106,8 @@ const ModelRow = ({ model, isBest, onViewDetails, problemType }: ModelRowProps) 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       className={cn(
-        'border-b border-gray-200 hover:bg-gray-50 transition-colors',
-        isBest && 'bg-yellow-50 border-yellow-200'
+        'border-b border-gray-700 dark:hover:bg-gray-800 transition-colors',
+        isBest && 'bg-yellow-900/20 border-yellow-600'
       )}
     >
       <td className="px-6 py-4">
@@ -116,10 +116,10 @@ const ModelRow = ({ model, isBest, onViewDetails, problemType }: ModelRowProps) 
             <Trophy className="h-4 w-4 text-yellow-600 mr-2" />
           )}
           <div>
-            <div className="font-medium text-gray-900">
+            <div className="font-medium text-black dark:text-white">
               {model.algorithm_name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
             </div>
-            <div className="text-sm text-gray-500">
+            <div className="text-sm text-black dark:text-white">
               {Object.keys(model.hyperparameters).length} hyperparameters
             </div>
           </div>
@@ -127,25 +127,25 @@ const ModelRow = ({ model, isBest, onViewDetails, problemType }: ModelRowProps) 
       </td>
       
       <td className="px-6 py-4">
-        <div className="text-sm font-medium text-gray-900">
+        <div className="text-sm font-medium text-black dark:text-white">
           {primaryMetric.value}
         </div>
-        <div className="text-xs text-gray-500">
+        <div className="text-xs text-black dark:text-white">
           {primaryMetric.name}
         </div>
       </td>
       
       <td className="px-6 py-4">
-        <div className="text-sm font-medium text-gray-900">
+        <div className="text-sm font-medium text-black dark:text-white">
           {primaryMetric.secondaryValue}
         </div>
-        <div className="text-xs text-gray-500">
+        <div className="text-xs text-black dark:text-white">
           {primaryMetric.secondaryName}
         </div>
       </td>
       
       <td className="px-6 py-4">
-        <div className="text-sm text-gray-900">
+        <div className="text-sm text-black dark:text-white">
           {model.training_time ? `${model.training_time.toFixed(2)}s` : 'N/A'}
         </div>
       </td>
@@ -153,7 +153,7 @@ const ModelRow = ({ model, isBest, onViewDetails, problemType }: ModelRowProps) 
       <td className="px-6 py-4">
         <div className="flex items-center space-x-2">
           {model.feature_importance && (
-            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-900 text-blue-200">
               <BarChart3 className="h-3 w-3 mr-1" />
               Feature Importance
             </span>
@@ -266,10 +266,10 @@ const MLResultsPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading results...</p>
+          <p className="text-black dark:text-black">Loading results...</p>
         </div>
       </div>
     );
@@ -277,12 +277,12 @@ const MLResultsPage = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <Card className="w-full max-w-md">
           <CardContent className="p-6 text-center">
             <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Results</h3>
-            <p className="text-gray-600 mb-4">{error}</p>
+            <h3 className="text-lg font-medium text-black dark:text-white mb-2">Error Loading Results</h3>
+            <p className="text-black dark:text-white mb-4">{error}</p>
             <div className="space-x-3">
               <Button onClick={loadResults} className="text-sm">
                 <RefreshCw className="h-4 w-4 mr-1" />
@@ -300,12 +300,12 @@ const MLResultsPage = () => {
 
   if (!pipelineRun) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <Card className="w-full max-w-md">
           <CardContent className="p-6 text-center">
             <AlertCircle className="h-12 w-12 text-gray-500 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Results Found</h3>
-            <p className="text-gray-600 mb-4">No results found for this pipeline run.</p>
+            <h3 className="text-lg font-medium text-black dark:text-white mb-2">No Results Found</h3>
+            <p className="text-black dark:text-white mb-4">No results found for this pipeline run.</p>
             <Button variant="outline" onClick={() => navigate(-1)} className="text-sm">
               Go Back
             </Button>
@@ -319,16 +319,16 @@ const MLResultsPage = () => {
   const bestModel = getBestModel();
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 flex items-center">
+            <h1 className="text-3xl font-bold text-black dark:text-white flex items-center">
               <Brain className="h-8 w-8 text-purple-600 mr-3" />
               ML Training Results
             </h1>
-            <p className="text-gray-600 mt-2">
+            <p className="text-black dark:text-white mt-2">
               {pipelineRun.problem_type ? 
                 pipelineRun.problem_type.toLowerCase().replace(/^\w/, c => c.toUpperCase()) : 
                 'Unknown Problem Type'
@@ -506,47 +506,47 @@ const MLResultsPage = () => {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
-              <Target className="h-5 w-5 mr-2 text-gray-600" />
+              <Target className="h-5 w-5 mr-2 text-gray-300" />
               Pipeline Configuration
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <div>
-                <h4 className="text-sm font-medium text-gray-900 mb-2">Problem Type</h4>
-                <p className="text-sm text-gray-600 capitalize">
+                <h4 className="text-sm font-medium text-black dark:text-white mb-2">Problem Type</h4>
+                <p className="text-sm text-black dark:text-white capitalize">
                   {pipelineRun.problem_type ? pipelineRun.problem_type.toLowerCase() : 'Unknown'}
                 </p>
               </div>
               <div>
-                <h4 className="text-sm font-medium text-gray-900 mb-2">Target Variable</h4>
-                <p className="text-sm text-gray-600">
+                <h4 className="text-sm font-medium text-black dark:text-white mb-2">Target Variable</h4>
+                <p className="text-sm text-black dark:text-white">
                   {pipelineRun.target_variable || 'Not specified'}
                 </p>
               </div>
               <div>
-                <h4 className="text-sm font-medium text-gray-900 mb-2">Algorithms</h4>
-                <p className="text-sm text-gray-600">
+                <h4 className="text-sm font-medium text-black dark:text-white mb-2">Algorithms</h4>
+                <p className="text-sm text-black dark:text-white">
                   {models.length} configured
                 </p>
               </div>
               {pipelineRun.preprocessing_config && (
                 <>
                   <div>
-                    <h4 className="text-sm font-medium text-gray-900 mb-2">Missing Values</h4>
-                    <p className="text-sm text-gray-600 capitalize">
+                    <h4 className="text-sm font-medium text-black dark:text-white mb-2">Missing Values</h4>
+                    <p className="text-sm text-black dark:text-white capitalize">
                       {pipelineRun.preprocessing_config.missing_strategy || 'Not specified'}
                     </p>
                   </div>
                   <div>
-                    <h4 className="text-sm font-medium text-gray-900 mb-2">Feature Scaling</h4>
-                    <p className="text-sm text-gray-600 capitalize">
+                    <h4 className="text-sm font-medium text-black dark:text-white mb-2">Feature Scaling</h4>
+                    <p className="text-sm text-black dark:text-white capitalize">
                       {pipelineRun.preprocessing_config.scaling_strategy || 'Not specified'}
                     </p>
                   </div>
                   <div>
-                    <h4 className="text-sm font-medium text-gray-900 mb-2">Test Split</h4>
-                    <p className="text-sm text-gray-600">
+                    <h4 className="text-sm font-medium text-black dark:text-white mb-2">Test Split</h4>
+                    <p className="text-sm text-black dark:text-white">
                       {pipelineRun.preprocessing_config.test_size ?
                         `${(pipelineRun.preprocessing_config.test_size * 100).toFixed(0)}%` :
                         'Not specified'

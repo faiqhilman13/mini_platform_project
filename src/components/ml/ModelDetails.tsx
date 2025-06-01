@@ -60,7 +60,7 @@ const MetricDisplay = ({ label, value, description, trend, format }: MetricDispl
       case 'negative':
         return 'text-red-600';
       default:
-        return 'text-gray-600';
+        return 'text-gray-300';
     }
   };
 
@@ -134,7 +134,7 @@ const FeatureImportance = ({ featureImportance, maxFeatures = 10 }: FeatureImpor
           >
             <div className="flex-1">
               <div className="flex items-center justify-between mb-1">
-                <span className="text-sm font-medium text-gray-700 truncate">
+                <span className="text-sm font-medium text-gray-700 dark:text-white truncate">
                   {feature}
                 </span>
                 <span className="text-xs text-gray-500">
@@ -184,7 +184,7 @@ const ConfusionMatrix = ({ confusionMatrix, classLabels }: ConfusionMatrixProps)
             {/* Header row */}
             <div></div>
             {labels.map((label, i) => (
-              <div key={i} className="text-xs font-medium text-gray-600 p-2 text-center">
+              <div key={i} className="text-xs font-medium text-gray-300 p-2 text-center">
                 {label}
               </div>
             ))}
@@ -192,7 +192,7 @@ const ConfusionMatrix = ({ confusionMatrix, classLabels }: ConfusionMatrixProps)
             {/* Matrix rows */}
             {confusionMatrix.map((row, i) => (
               <React.Fragment key={i}>
-                <div className="text-xs font-medium text-gray-600 p-2 flex items-center">
+                <div className="text-xs font-medium text-gray-300 p-2 flex items-center">
                   {labels[i]}
                 </div>
                 {row.map((value, j) => (
@@ -248,7 +248,7 @@ const HyperparameterDisplay = ({ hyperparameters }: HyperparameterDisplayProps) 
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
       {entries.map(([key, value]) => (
         <div key={key} className="bg-gray-50 p-3 rounded-lg">
-          <div className="text-xs font-medium text-gray-600 uppercase tracking-wide mb-1">
+          <div className="text-xs font-medium text-gray-300 dark:text-black uppercase tracking-wide mb-1">
             {key.replace(/_/g, ' ')}
           </div>
           <div className="text-sm font-mono text-gray-900">
@@ -375,7 +375,7 @@ const ModelDetails = ({ model, problemType, isBest = false, className }: ModelDe
                   </span>
                 )}
               </CardTitle>
-              <p className="text-sm text-gray-600 mt-1">
+              <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">
                 Trained in {model.training_time ? model.training_time.toFixed(2) : 'N/A'}s • 
                 Model ID: {model.model_id.slice(0, 8)}...
               </p>
@@ -408,7 +408,7 @@ const ModelDetails = ({ model, problemType, isBest = false, className }: ModelDe
                 'flex items-center space-x-1 px-3 py-1.5 rounded-md text-xs font-medium transition-colors',
                 activeTab === tab.id
                   ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
+                  : 'text-gray-300 hover:text-gray-900'
               )}
             >
               {tab.icon}
@@ -423,8 +423,8 @@ const ModelDetails = ({ model, problemType, isBest = false, className }: ModelDe
           <div className="space-y-6">
             {/* Performance Metrics */}
             <div>
-              <h3 className="text-sm font-medium text-gray-900 mb-4 flex items-center">
-                <Target className="h-4 w-4 mr-2 text-gray-600" />
+              <h3 className="text-sm font-medium text-gray-700 dark:text-white mb-4 flex items-center">
+                <Target className="h-4 w-4 mr-2 text-gray-300" />
                 Performance Metrics
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -443,8 +443,8 @@ const ModelDetails = ({ model, problemType, isBest = false, className }: ModelDe
 
             {/* Training Information */}
             <div>
-              <h3 className="text-sm font-medium text-gray-900 mb-4 flex items-center">
-                <Clock className="h-4 w-4 mr-2 text-gray-600" />
+              <h3 className="text-sm font-medium text-gray-700 dark:text-white mb-4 flex items-center">
+                <Clock className="h-4 w-4 mr-2 text-gray-300" />
                 Training Information
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -468,8 +468,8 @@ const ModelDetails = ({ model, problemType, isBest = false, className }: ModelDe
             {/* Confusion Matrix for Classification */}
             {problemType === 'CLASSIFICATION' && metrics.confusion_matrix && (
               <div>
-                <h3 className="text-sm font-medium text-gray-900 mb-4 flex items-center">
-                  <Hash className="h-4 w-4 mr-2 text-gray-600" />
+                <h3 className="text-sm font-medium text-gray-700 dark:text-white mb-4 flex items-center">
+                  <Hash className="h-4 w-4 mr-2 text-gray-300" />
                   Confusion Matrix
                 </h3>
                 <ConfusionMatrix
@@ -485,8 +485,8 @@ const ModelDetails = ({ model, problemType, isBest = false, className }: ModelDe
           <div className="space-y-6">
             {model.feature_importance ? (
               <div>
-                <h3 className="text-sm font-medium text-gray-900 mb-4 flex items-center">
-                  <TrendingUp className="h-4 w-4 mr-2 text-gray-600" />
+                <h3 className="text-sm font-medium text-gray-700 dark:text-white mb-4 flex items-center">
+                  <TrendingUp className="h-4 w-4 mr-2 text-gray-300" />
                   Feature Importance
                 </h3>
                 <FeatureImportance featureImportance={model.feature_importance} />
@@ -506,35 +506,35 @@ const ModelDetails = ({ model, problemType, isBest = false, className }: ModelDe
         {activeTab === 'config' && (
           <div className="space-y-6">
             <div>
-              <h3 className="text-sm font-medium text-gray-900 mb-4 flex items-center">
-                <Settings className="h-4 w-4 mr-2 text-gray-600" />
+              <h3 className="text-sm font-medium text-gray-700 dark:text-white mb-4 flex items-center">
+                <Settings className="h-4 w-4 mr-2 text-gray-300" />
                 Hyperparameters
               </h3>
               <HyperparameterDisplay hyperparameters={model.hyperparameters} />
             </div>
 
             <div>
-              <h3 className="text-sm font-medium text-gray-900 mb-4 flex items-center">
-                <Layers className="h-4 w-4 mr-2 text-gray-600" />
+              <h3 className="text-sm font-medium text-gray-700 dark:text-white mb-4 flex items-center">
+                <Layers className="h-4 w-4 mr-2 text-gray-300" />
                 Model Information
               </h3>
               <div className="bg-gray-50 p-4 rounded-lg space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Algorithm</span>
-                  <span className="text-sm font-medium text-gray-900">{algorithmName}</span>
+                  <span className="text-sm text-gray-300 dark:text-black">Algorithm</span>
+                  <span className="text-sm font-medium text-black">{algorithmName}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Model ID</span>
-                  <span className="text-sm font-mono text-gray-900">{model.model_id}</span>
+                  <span className="text-sm text-gray-300 dark:text-black">Model ID</span>
+                  <span className="text-sm font-mono text-black">{model.model_id}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Pipeline Run</span>
-                  <span className="text-sm font-mono text-gray-900">{model.pipeline_run_id}</span>
+                  <span className="text-sm text-gray-300 dark:text-black">Pipeline Run</span>
+                  <span className="text-sm font-mono text-black">{model.pipeline_run_id}</span>
                 </div>
                 {model.model_path && (
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Model Path</span>
-                    <span className="text-sm font-mono text-gray-900 truncate">{model.model_path}</span>
+                    <span className="text-sm text-gray-300 dark:text-black">Model Path</span>
+                    <span className="text-sm font-mono text-black truncate">{model.model_path}</span>
                   </div>
                 )}
               </div>
@@ -545,8 +545,8 @@ const ModelDetails = ({ model, problemType, isBest = false, className }: ModelDe
         {activeTab === 'insights' && (
           <div className="space-y-6">
             <div>
-              <h3 className="text-sm font-medium text-gray-900 mb-4 flex items-center">
-                <Eye className="h-4 w-4 mr-2 text-gray-600" />
+              <h3 className="text-sm font-medium text-gray-700 dark:text-white mb-4 flex items-center">
+                <Eye className="h-4 w-4 mr-2 text-gray-300" />
                 Model Insights
               </h3>
               

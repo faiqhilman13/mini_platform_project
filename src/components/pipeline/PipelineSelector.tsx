@@ -76,7 +76,7 @@ const PipelineSelector = ({
                   {getIconComponent(pipeline.icon)}
                 </div>
                 <div className="ml-4">
-                  <h3 className="text-lg font-medium text-gray-900">{pipeline.name}</h3>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">{pipeline.name}</h3>
                 </div>
               </div>
               <p className="mt-4 text-sm text-gray-500">{pipeline.description}</p>

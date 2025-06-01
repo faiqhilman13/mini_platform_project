@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Upload, Clock, FileText } from 'lucide-react';
+import { Upload, Clock, FileText, MessageSquare, Tag, Brain } from 'lucide-react';
 import FileUploadDropzone from '../components/file/FileUploadDropzone';
 import RecentFilesList from '../components/file/RecentFilesList';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
@@ -57,10 +57,10 @@ const UploadPage = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <h1 className="text-3xl font-bold text-gray-900 mb-3">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-3">
               Mini IDP - AI Workflow Platform
             </h1>
-            <p className="text-lg text-gray-600 mb-8">
+            <p className="text-lg text-gray-600 dark:text-gray-300 mb-8">
               Upload documents and datasets for AI processing, analysis, and model training
             </p>
           </motion.div>
@@ -135,32 +135,41 @@ const UploadPage = () => {
               <CardTitle>Available Pipelines</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="bg-blue-50 rounded-lg p-4">
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">RAG Chatbot</h3>
-                  <p className="text-sm text-gray-600">
-                    Create a conversational interface that can answer questions based on your documents.
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="flex flex-col">
+                  <div className="text-blue-600 mb-3">
+                    <MessageSquare className="h-8 w-8" />
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">RAG Chatbot</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                    Ask questions about your documents with AI-powered context
                   </p>
                 </div>
-                
-                <div className="bg-purple-50 rounded-lg p-4">
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Summarizer</h3>
-                  <p className="text-sm text-gray-600">
-                    Generate concise summaries from long documents, highlighting key information.
+                <div className="flex flex-col">
+                  <div className="text-green-600 mb-3">
+                    <FileText className="h-8 w-8" />
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Summarizer</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                    Generate concise summaries of long documents
                   </p>
                 </div>
-                
-                <div className="bg-amber-50 rounded-lg p-4">
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Text Classifier</h3>
-                  <p className="text-sm text-gray-600">
-                    Categorize document content into predefined classes or topics.
+                <div className="flex flex-col">
+                  <div className="text-purple-600 mb-3">
+                    <Tag className="h-8 w-8" />
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Text Classifier</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                    Automatically categorize documents by content type
                   </p>
                 </div>
-                
-                <div className="bg-green-50 rounded-lg p-4">
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">ML Training</h3>
-                  <p className="text-sm text-gray-600">
-                    Train machine learning models on structured CSV/Excel datasets.
+                <div className="flex flex-col">
+                  <div className="text-blue-600 mb-3">
+                    <Brain className="h-8 w-8" />
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">ML Training</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                    Train machine learning models on your datasets
                   </p>
                 </div>
               </div>

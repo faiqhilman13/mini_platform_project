@@ -497,7 +497,7 @@ const DatasetConfigPage = () => {
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Dataset Configuration</h1>
               {file && (
-                <p className="text-gray-600">{file.filename}</p>
+                <p className="text-gray-300">{file.filename}</p>
               )}
             </div>
           </div>

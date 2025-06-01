@@ -320,7 +320,7 @@ const FileUploadDropzone = ({
                   {previewData && (
                     <div className="mt-3 pt-3 border-t border-gray-100">
                       <div className="flex items-center justify-between mb-2">
-                        <p className="text-xs font-medium text-gray-600">Data Preview</p>
+                        <p className="text-xs font-medium text-gray-300">Data Preview</p>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -343,7 +343,7 @@ const FileUploadDropzone = ({
                           >
                             <div className="text-xs bg-gray-50 p-2 rounded border max-h-20 overflow-auto">
                               {previewData.map((row, i) => (
-                                <div key={i} className="font-mono text-xs text-gray-600 truncate">
+                                <div key={i} className="font-mono text-xs text-gray-300 truncate">
                                   {row.join(', ')}
                                 </div>
                               ))}
@@ -371,8 +371,8 @@ const FileUploadDropzone = ({
               {uploadProgress && (
                 <div className="w-full max-w-xs mx-auto mb-4">
                   <div className="flex justify-between items-center mb-2">
-                    <span className="text-xs text-gray-600">Uploading...</span>
-                    <span className="text-xs text-gray-600">{uploadProgress.percentage}%</span>
+                    <span className="text-xs text-gray-300">Uploading...</span>
+                    <span className="text-xs text-gray-300">{uploadProgress.percentage}%</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <motion.div
@@ -446,7 +446,7 @@ const FileUploadDropzone = ({
       {/* File size and format guidelines */}
       <div className="mt-4 p-3 bg-gray-50 rounded-lg">
         <h4 className="text-sm font-medium text-gray-900 mb-2">Upload Guidelines</h4>
-        <ul className="text-xs text-gray-600 space-y-1">
+        <ul className="text-xs text-black space-y-1">
           <li>• Maximum file size: {(maxFileSize / (1024 * 1024)).toFixed(0)}MB</li>
           <li>• For best ML performance, ensure datasets have clear column headers</li>
           <li>• CSV files should use comma separation and UTF-8 encoding</li>

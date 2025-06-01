@@ -46,7 +46,7 @@ const ConfigSection = ({ title, description, icon, children, className }: Config
       </div>
       <div className="flex-1">
         <h3 className="text-sm font-medium text-gray-900">{title}</h3>
-        <p className="text-xs text-gray-600 mt-1">{description}</p>
+        <p className="text-xs text-gray-300 mt-1">{description}</p>
       </div>
     </div>
     {children}
@@ -165,7 +165,7 @@ const PreprocessingConfig = ({
         </div>
         
         {datasetInfo && (
-          <div className="flex items-center space-x-4 text-sm text-gray-600">
+          <div className="flex items-center space-x-4 text-sm text-gray-300">
             <span>{datasetInfo.totalRows} rows</span>
             <span>{datasetInfo.totalColumns} columns</span>
             {datasetInfo.missingCells > 0 && (
@@ -206,7 +206,7 @@ const PreprocessingConfig = ({
                   )}
                 >
                   <div className="font-medium text-sm">{strategy.label}</div>
-                  <div className="text-xs text-gray-600 mt-1">{strategy.description}</div>
+                  <div className="text-xs text-gray-300 mt-1">{strategy.description}</div>
                 </motion.button>
               ))}
             </div>
@@ -257,7 +257,7 @@ const PreprocessingConfig = ({
                   )}
                 >
                   <div className="font-medium text-sm">{method.label}</div>
-                  <div className="text-xs text-gray-600 mt-1">{method.description}</div>
+                  <div className="text-xs text-gray-300 mt-1">{method.description}</div>
                 </motion.button>
               ))}
             </div>
@@ -287,7 +287,7 @@ const PreprocessingConfig = ({
                   )}
                 >
                   <div className="font-medium text-sm">{method.label}</div>
-                  <div className="text-xs text-gray-600 mt-1">{method.description}</div>
+                  <div className="text-xs text-gray-300 mt-1">{method.description}</div>
                 </motion.button>
               ))}
             </div>
@@ -330,13 +330,13 @@ const PreprocessingConfig = ({
                 <div className="bg-gray-50 p-3 rounded-lg">
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
-                      <span className="text-gray-600">Training samples:</span>
+                      <span className="text-gray-300">Training samples:</span>
                       <span className="font-medium ml-2">
                         {Math.round(datasetInfo.totalRows * (1 - config.trainTestSplit))}
                       </span>
                     </div>
                     <div>
-                      <span className="text-gray-600">Test samples:</span>
+                      <span className="text-gray-300">Test samples:</span>
                       <span className="font-medium ml-2">
                         {Math.round(datasetInfo.totalRows * config.trainTestSplit)}
                       </span>
@@ -366,7 +366,7 @@ const PreprocessingConfig = ({
                         <label className="text-sm font-medium text-gray-700">
                           Random Seed
                         </label>
-                        <p className="text-xs text-gray-600">
+                        <p className="text-xs text-gray-300">
                           Set seed for reproducible results
                         </p>
                       </div>
@@ -383,7 +383,7 @@ const PreprocessingConfig = ({
                         <label className="text-sm font-medium text-gray-700">
                           Stratify Split
                         </label>
-                        <p className="text-xs text-gray-600">
+                        <p className="text-xs text-gray-300">
                           Maintain class distribution in splits
                         </p>
                       </div>
@@ -404,7 +404,7 @@ const PreprocessingConfig = ({
           {recommendations.length > 0 && (
             <div className="space-y-3">
               <h4 className="text-sm font-medium text-gray-900 flex items-center">
-                <TrendingUp className="h-4 w-4 mr-2 text-gray-600" />
+                <TrendingUp className="h-4 w-4 mr-2 text-gray-300" />
                 Recommendations
               </h4>
               
@@ -456,7 +456,7 @@ const PreprocessingConfig = ({
             <h4 className="text-sm font-medium text-gray-900 mb-3">Configuration Summary</h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
               <div>
-                <span className="text-gray-600">Missing values:</span>
+                <span className="text-gray-300">Missing values:</span>
                 <span className="font-medium ml-2 capitalize">
                   {config.missingValueStrategy}
                   {config.missingValueStrategy === 'constant' && config.constantValue && 
@@ -465,19 +465,19 @@ const PreprocessingConfig = ({
                 </span>
               </div>
               <div>
-                <span className="text-gray-600">Scaling:</span>
+                <span className="text-gray-300">Scaling:</span>
                 <span className="font-medium ml-2 capitalize">
                   {config.scaling === 'none' ? 'None' : config.scaling}
                 </span>
               </div>
               <div>
-                <span className="text-gray-600">Categorical encoding:</span>
+                <span className="text-gray-300">Categorical encoding:</span>
                 <span className="font-medium ml-2 capitalize">
                   {config.categoricalEncoding === 'onehot' ? 'One-hot' : 'Label'}
                 </span>
               </div>
               <div>
-                <span className="text-gray-600">Test split:</span>
+                <span className="text-gray-300">Test split:</span>
                 <span className="font-medium ml-2">
                   {(config.trainTestSplit * 100).toFixed(0)}%
                 </span>

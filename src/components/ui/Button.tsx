@@ -28,8 +28,8 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     const variantClasses = {
       primary: 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm',
       secondary: 'bg-purple-600 text-white hover:bg-purple-700 shadow-sm',
-      outline: 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50',
-      ghost: 'bg-transparent text-gray-700 hover:bg-gray-100',
+      outline: 'bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600',
+      ghost: 'bg-transparent text-gray-300 hover:bg-gray-800',
       danger: 'bg-red-600 text-white hover:bg-red-700 shadow-sm',
     };
 
@@ -44,7 +44,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         ref={ref}
         className={cn(
           'inline-flex items-center justify-center font-medium rounded-md transition-colors',
-          'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500',
+          'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 focus:ring-offset-gray-900',
           'disabled:opacity-50 disabled:cursor-not-allowed',
           variantClasses[variant],
           sizeClasses[size],

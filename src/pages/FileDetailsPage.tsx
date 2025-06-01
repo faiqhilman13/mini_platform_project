@@ -168,7 +168,7 @@ const FileDetailsPage = () => {
       <PageLayout>
         <div className="text-center py-12">
           <h2 className="text-2xl font-bold text-red-600 mb-4">Error</h2>
-          <p className="text-gray-600 mb-6">{fileError || 'File not found'}</p>
+          <p className="text-gray-300 mb-6">{fileError || 'File not found'}</p>
           <Button onClick={() => navigate('/')}>Back to Home</Button>
         </div>
       </PageLayout>
@@ -189,7 +189,7 @@ const FileDetailsPage = () => {
 
         <div className="flex flex-col md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-1">{file.filename}</h1>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{file.filename}</h1>
             <div className="flex items-center text-sm text-gray-500">
               <FileType className="w-4 h-4 mr-1" />
               <span>{file.file_type.toUpperCase()}</span>
@@ -237,7 +237,7 @@ const FileDetailsPage = () => {
         </Card>
 
         <div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Pipeline Runs</h2>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Pipeline Runs</h2>
           
           {runsLoading ? (
             <div className="flex justify-center items-center py-8">

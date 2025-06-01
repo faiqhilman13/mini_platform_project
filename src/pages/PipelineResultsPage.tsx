@@ -200,7 +200,7 @@ const PipelineResultsPage = () => {
         <div className="text-center py-12">
           <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-red-600 mb-4">Error</h2>
-          <p className="text-gray-600 mb-6">{error || 'Pipeline not found'}</p>
+          <p className="text-gray-300 mb-6">{error || 'Pipeline not found'}</p>
           <Button onClick={() => navigate(-1)}>Go Back</Button>
         </div>
       </PageLayout>
@@ -224,7 +224,7 @@ const PipelineResultsPage = () => {
             <h1 className="text-3xl font-bold text-gray-900">
               {pipelineRun.pipeline_type.replace('_', ' ')} Results
             </h1>
-            <p className="text-gray-600 mt-2">
+            <p className="text-gray-300 mt-2">
               Pipeline completed on {formatDate(pipelineRun.updated_at)}
             </p>
           </div>
@@ -266,7 +266,7 @@ const PipelineResultsPage = () => {
             <CardContent className="p-6 text-center">
               <AlertCircle className="h-8 w-8 text-amber-500 mx-auto mb-3" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">Pipeline Not Completed</h3>
-              <p className="text-gray-600">
+              <p className="text-gray-300">
                 This pipeline has not completed successfully. Status: {pipelineRun.status}
               </p>
               {pipelineRun.error_message && (

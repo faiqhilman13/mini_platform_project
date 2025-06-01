@@ -194,7 +194,7 @@ const ParameterInput = ({ parameter, value, onChange, error, className }: Parame
         </label>
         {parameter.description && (
           <div className="group relative">
-            <Info className="h-4 w-4 text-gray-400 hover:text-gray-600 cursor-help" />
+            <Info className="h-4 w-4 text-gray-400 hover:text-gray-300 cursor-help" />
             <div className="absolute right-0 bottom-full mb-2 hidden group-hover:block z-10">
               <div className="bg-gray-900 text-white text-xs rounded py-1 px-2 max-w-xs">
                 {parameter.description}
@@ -400,7 +400,7 @@ const HyperparameterConfig = ({
                   'px-3 py-1 text-xs rounded-md transition-colors',
                   currentMode === 'basic' 
                     ? 'bg-white text-gray-900 shadow-sm' 
-                    : 'text-gray-600 hover:text-gray-900'
+                    : 'text-gray-300 hover:text-gray-900'
                 )}
               >
                 Basic
@@ -411,7 +411,7 @@ const HyperparameterConfig = ({
                   'px-3 py-1 text-xs rounded-md transition-colors',
                   currentMode === 'advanced' 
                     ? 'bg-white text-gray-900 shadow-sm' 
-                    : 'text-gray-600 hover:text-gray-900'
+                    : 'text-gray-300 hover:text-gray-900'
                 )}
               >
                 Advanced
@@ -420,7 +420,7 @@ const HyperparameterConfig = ({
           </div>
         </div>
         
-        <div className="flex items-center justify-between text-sm text-gray-600">
+        <div className="flex items-center justify-between text-sm text-gray-300">
           <span>
             Configuring {selectedConfigs.length} algorithm{selectedConfigs.length !== 1 ? 's' : ''}
           </span>
@@ -551,11 +551,11 @@ const HyperparameterConfig = ({
           <div className="mt-6 p-4 bg-gray-50 rounded-lg">
             <div className="flex items-center justify-between">
               <div className="flex items-center">
-                <Gauge className="h-4 w-4 text-gray-600 mr-2" />
+                <Gauge className="h-4 w-4 text-gray-300 mr-2" />
                 <span className="text-sm font-medium text-gray-700">Configuration Status</span>
               </div>
               
-              <div className="text-sm text-gray-600">
+              <div className="text-sm text-gray-300">
                 {Object.keys(validationErrors).length === 0 ? (
                   <span className="text-green-600 flex items-center">
                     <CheckCircle className="h-4 w-4 mr-1" />

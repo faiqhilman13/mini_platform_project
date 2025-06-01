@@ -362,7 +362,7 @@ const AlgorithmSelector = ({
           </div>
         </div>
         
-        <div className="flex items-center justify-between text-sm text-gray-600">
+        <div className="flex items-center justify-between text-sm text-gray-300">
           <span>
             {selectedAlgorithms.length} of {maxSelections} algorithms selected
           </span>
@@ -424,7 +424,7 @@ const AlgorithmSelector = ({
                           </div>
                         </div>
                         
-                        <p className="text-sm text-gray-600 mb-3">
+                        <p className="text-sm text-gray-300 mb-3">
                           {algorithm.description}
                         </p>
                         
@@ -464,7 +464,7 @@ const AlgorithmSelector = ({
                                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                     {algorithm.hyperparameters.slice(0, 4).map((param) => (
                                       <div key={param.name} className="text-xs">
-                                        <span className="font-mono text-gray-600">
+                                        <span className="font-mono text-gray-300">
                                           {param.name}
                                         </span>
                                         <span className="text-gray-500 ml-1">

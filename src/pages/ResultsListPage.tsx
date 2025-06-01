@@ -87,7 +87,7 @@ const ResultsListPage = () => {
       case 'FAILED':
         return <XCircle className="h-4 w-4 text-red-600" />;
       default:
-        return <Clock className="h-4 w-4 text-gray-600" />;
+        return <Clock className="h-4 w-4 text-gray-300" />;
     }
   };
 
@@ -122,7 +122,7 @@ const ResultsListPage = () => {
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading results...</p>
+            <p className="text-gray-300">Loading results...</p>
           </div>
         </div>
       </div>
@@ -135,11 +135,11 @@ const ResultsListPage = () => {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 flex items-center">
+            <h1 className="text-3xl font-bold text-black dark:text-white flex items-center">
               <BarChart3 className="h-8 w-8 text-purple-600 mr-3" />
               ML Training Results
             </h1>
-            <p className="text-gray-600 mt-2">
+            <p className="text-black dark:text-gray-300 mt-2">
               View and analyze your machine learning model training results
             </p>
           </div>
@@ -172,8 +172,8 @@ const ResultsListPage = () => {
                   <BarChart3 className="h-6 w-6 text-blue-600" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Total Runs</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+                  <p className="text-sm font-medium text-black dark:text-gray-300">Total Runs</p>
+                  <p className="text-2xl font-bold text-black dark:text-white">{stats.total}</p>
                 </div>
               </div>
             </CardContent>
@@ -186,8 +186,8 @@ const ResultsListPage = () => {
                   <CheckCircle className="h-6 w-6 text-green-600" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Completed</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.completed}</p>
+                  <p className="text-sm font-medium text-black dark:text-gray-300">Completed</p>
+                  <p className="text-2xl font-bold text-black dark:text-white">{stats.completed}</p>
                 </div>
               </div>
             </CardContent>
@@ -200,8 +200,8 @@ const ResultsListPage = () => {
                   <Activity className="h-6 w-6 text-blue-600" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Processing</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.processing}</p>
+                  <p className="text-sm font-medium text-black dark:text-gray-300">Processing</p>
+                  <p className="text-2xl font-bold text-black dark:text-white">{stats.processing}</p>
                 </div>
               </div>
             </CardContent>
@@ -214,8 +214,8 @@ const ResultsListPage = () => {
                   <XCircle className="h-6 w-6 text-red-600" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Failed</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.failed}</p>
+                  <p className="text-sm font-medium text-black dark:text-gray-300">Failed</p>
+                  <p className="text-2xl font-bold text-black dark:text-white">{stats.failed}</p>
                 </div>
               </div>
             </CardContent>
@@ -244,7 +244,7 @@ const ResultsListPage = () => {
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value as any)}
-                  className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900 dark:text-gray-700"
                 >
                   <option value="all">All Status</option>
                   <option value="COMPLETED">Completed</option>
@@ -271,10 +271,10 @@ const ResultsListPage = () => {
             <CardContent className="p-6">
               <div className="text-center py-8">
                 <BarChart3 className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                <h3 className="text-lg font-medium text-black dark:text-white mb-2">
                   {searchTerm || statusFilter !== 'all' ? 'No results found' : 'No training runs yet'}
                 </h3>
-                <p className="text-gray-600 mb-4">
+                <p className="text-black dark:text-gray-300 mb-4">
                   {searchTerm || statusFilter !== 'all'
                     ? 'Try adjusting your search or filter criteria.'
                     : 'Start your first ML training to see results here.'
@@ -300,73 +300,79 @@ const ResultsListPage = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3, delay: index * 0.05 }}
                 >
-                                                        <div                      className="hover:shadow-md transition-shadow cursor-pointer"                     onClick={() => handleViewResults(run)}                   >                     <Card>                       <CardContent className="p-6">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-3 mb-2">
-                            <h3 className="text-lg font-medium text-gray-900">
-                              Training Run
-                            </h3>
-                            <span className={cn(
-                              'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border',
-                              getStatusColor(run.status)
-                            )}>
-                              {getStatusIcon(run.status)}
-                              <span className="ml-1">{run.status}</span>
-                            </span>
-                          </div>
-                          
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
-                            <div className="flex items-center">
-                              <Target className="h-4 w-4 mr-2 text-gray-400" />
-                              <span className="font-medium">Target:</span>
-                              <span className="ml-1">{mlRun.target_variable || 'N/A'}</span>
-                            </div>
-                            
-                            <div className="flex items-center">
-                              <Brain className="h-4 w-4 mr-2 text-gray-400" />
-                              <span className="font-medium">Type:</span>
-                              <span className="ml-1 capitalize">
-                                {mlRun.problem_type?.toLowerCase() || 'N/A'}
+                  <div className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => handleViewResults(run)}>
+                    <Card>
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-3 mb-2">
+                              <h3 className="text-lg font-medium text-black dark:text-white">
+                                Training Run
+                              </h3>
+                              <span className={cn(
+                                'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border',
+                                getStatusColor(run.status)
+                              )}>
+                                {getStatusIcon(run.status)}
+                                <span className="ml-1">{run.status}</span>
                               </span>
                             </div>
                             
-                            <div className="flex items-center">
-                              <Calendar className="h-4 w-4 mr-2 text-gray-400" />
-                              <span className="font-medium">Started:</span>
-                              <span className="ml-1">
-                                {new Date(run.created_at).toLocaleDateString()}
-                              </span>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-black dark:text-gray-300">
+                              <div className="flex items-center">
+                                <Target className="h-4 w-4 mr-2 text-gray-400" />
+                                <span className="font-medium">Target:</span>
+                                <span className="ml-1">{mlRun.target_variable || 'N/A'}</span>
+                              </div>
+                              
+                              <div className="flex items-center">
+                                <Brain className="h-4 w-4 mr-2 text-gray-400" />
+                                <span className="font-medium">Type:</span>
+                                <span className="ml-1 capitalize">
+                                  {mlRun.problem_type?.toLowerCase() || 'N/A'}
+                                </span>
+                              </div>
+                              
+                              <div className="flex items-center">
+                                <Calendar className="h-4 w-4 mr-2 text-gray-400" />
+                                <span className="font-medium">Started:</span>
+                                <span className="ml-1">
+                                  {new Date(run.created_at).toLocaleDateString()}
+                                </span>
+                              </div>
+                            </div>
+                            
+                            <div className="mt-3 text-xs text-gray-500">
+                              Run ID: {run.run_uuid.slice(0, 8)}...
                             </div>
                           </div>
                           
-                          <div className="mt-3 text-xs text-gray-500">
-                            Run ID: {run.run_uuid.slice(0, 8)}...
+                          <div className="ml-6 flex items-center space-x-3">
+                            {run.status === 'COMPLETED' && mlRun.best_model_id && (
+                              <div className="text-center">
+                                <Trophy className="h-5 w-5 text-yellow-600 mx-auto mb-1" />
+                                <span className="text-xs text-black dark:text-gray-300">Best Model</span>
+                              </div>
+                            )}
+                            
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleViewResults(run);
+                              }}
+                              className="text-xs"
+                            >
+                              <Eye className="h-3 w-3 mr-1" />
+                              View Details
+                            </Button>
                           </div>
                         </div>
-                        
-                        <div className="ml-6 flex items-center space-x-3">
-                          {run.status === 'COMPLETED' && mlRun.best_model_id && (
-                            <div className="text-center">
-                              <Trophy className="h-5 w-5 text-yellow-600 mx-auto mb-1" />
-                              <span className="text-xs text-gray-600">Best Model</span>
-                            </div>
-                          )}
-                          
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleViewResults(run);
-                            }}
-                            className="text-xs"
-                          >
-                            <Eye className="h-3 w-3 mr-1" />
-                            View Details
-                          </Button>
-                        </div>
-                                             </div>                     </CardContent>                   </Card>                   </div>                 </motion.div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </motion.div>
               );
             })}
           </div>
@@ -377,8 +383,8 @@ const ResultsListPage = () => {
           <CardContent className="p-6">
             <div className="text-center">
               <TrendingUp className="h-12 w-12 text-purple-600 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Ready for More?</h3>
-              <p className="text-gray-600 mb-4">
+              <h3 className="text-lg font-medium text-black dark:text-white mb-2">Ready for More?</h3>
+              <p className="text-black dark:text-gray-300 mb-4">
                 Start new training runs or explore your existing datasets for more insights.
               </p>
               <div className="flex justify-center space-x-3">

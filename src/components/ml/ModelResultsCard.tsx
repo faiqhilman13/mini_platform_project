@@ -116,7 +116,7 @@ const ModelResultsCard = ({
                     const originalImportance = model.feature_importance?.[feature as string] || 0;
                     return (
                       <div key={feature as string} className="flex items-center">
-                        <div className="text-xs text-gray-600 w-1/3 truncate" title={feature as string}>
+                        <div className="text-xs text-gray-300 w-1/3 truncate" title={feature as string}>
                           {feature}
                         </div>
                         <div className="w-2/3 flex items-center">

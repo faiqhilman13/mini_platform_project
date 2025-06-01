@@ -114,7 +114,7 @@ const FilesListPage = () => {
               <Database className="h-8 w-8 text-purple-600 mr-3" />
               Files
             </h1>
-            <p className="text-gray-600 dark:text-gray-300 mt-2">
+            <p className="text-gray-300 mt-2">
               Manage your uploaded documents and datasets
             </p>
           </div>
@@ -147,8 +147,8 @@ const FilesListPage = () => {
                   <FileText className="h-6 w-6 text-blue-600" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-800 dark:text-gray-300">Total Files</p>
-                  <p className="text-2xl font-bold text-black dark:text-white">{stats.total}</p>
+                  <p className="text-sm font-medium text-gray-300">Total Files</p>
+                  <p className="text-2xl font-bold text-white">{stats.total}</p>
                 </div>
               </div>
             </CardContent>
@@ -161,8 +161,8 @@ const FilesListPage = () => {
                   <FileText className="h-6 w-6 text-purple-600" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-800 dark:text-gray-300">Documents</p>
-                  <p className="text-2xl font-bold text-black dark:text-white">{stats.documents}</p>
+                  <p className="text-sm font-medium text-gray-300">Documents</p>
+                  <p className="text-2xl font-bold text-white">{stats.documents}</p>
                 </div>
               </div>
             </CardContent>
@@ -175,8 +175,8 @@ const FilesListPage = () => {
                   <Database className="h-6 w-6 text-green-600" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-800 dark:text-gray-300">Datasets</p>
-                  <p className="text-2xl font-bold text-black dark:text-white">{stats.datasets}</p>
+                  <p className="text-sm font-medium text-gray-300">Datasets</p>
+                  <p className="text-2xl font-bold text-white">{stats.datasets}</p>
                 </div>
               </div>
             </CardContent>

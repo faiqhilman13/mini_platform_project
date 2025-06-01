@@ -64,7 +64,7 @@ const detectColumnType = (values: any[]): { type: string; icon: React.ReactNode;
   }
 
   // Default to text
-  return { type: 'text', icon: <Type className="h-3 w-3" />, color: 'text-gray-600' };
+  return { type: 'text', icon: <Type className="h-3 w-3" />, color: 'text-gray-300' };
 };
 
 // Calculate basic statistics for a column
@@ -132,7 +132,7 @@ const DatasetPreview = ({
             icon: <Hash className="h-3 w-3" />,
             color: metadata.data_type.includes('int') || metadata.data_type.includes('float') 
               ? 'text-blue-500' 
-              : 'text-gray-600'
+              : 'text-gray-300'
           };
         }
       }
@@ -249,7 +249,7 @@ const DatasetPreview = ({
         </div>
         
         {/* Dataset Summary */}
-        <div className="flex items-center space-x-4 text-sm text-gray-600 mt-2">
+        <div className="flex items-center space-x-4 text-sm text-gray-300 mt-2">
           <span className="flex items-center">
             <Info className="h-4 w-4 mr-1" />
             {data.length} rows × {allColumns.length} columns
@@ -294,7 +294,7 @@ const DatasetPreview = ({
                       </span>
                     </div>
                     
-                    <div className="space-y-1 text-xs text-gray-600">
+                    <div className="space-y-1 text-xs text-gray-300">
                       <div className="flex justify-between">
                         <span>Unique:</span>
                         <span>{stats.unique}</span>
@@ -362,7 +362,7 @@ const DatasetPreview = ({
                         {/* Data type indicator */}
                         {analysis && (
                           <div className="mt-1">
-                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-gray-100 text-gray-600 capitalize">
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-gray-100 text-gray-300 capitalize">
                               {analysis.type}
                             </span>
                           </div>

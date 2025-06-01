@@ -100,7 +100,7 @@ const PipelineStatus = ({  pipelineRun,  refreshInterval = 5000,  onRefresh,  on
           {renderStatusIcon()}
           <div className="ml-3">
             <div className="flex items-center">
-              <span className="text-sm font-medium text-gray-900">
+              <span className="text-sm font-medium text-gray-900 dark:text-white">
                 {pipelineRun.pipeline_type ? pipelineRun.pipeline_type.replace('_', ' ') : 'Unknown Pipeline'}
               </span>
               <span
