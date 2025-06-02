@@ -166,8 +166,10 @@ class PreprocessingConfig:
     feature_selection_method: Optional[str] = None  # selectkbest, rfe, lasso, mutual_info
     n_features_to_select: Optional[int] = None
     
-    # Manual feature selection (NEW)
+    # Manual feature selection (ENHANCED)
     selected_features: Optional[List[str]] = None  # Explicit list of features to use
+    respect_user_selection: bool = True  # Always respect user's feature selection even for high cardinality
+    max_categories_override: Optional[int] = None  # Custom limit for user-selected features
     
     # Outlier handling
     outlier_method: str = "none"  # none, zscore, iqr, isolation_forest
@@ -192,6 +194,8 @@ class PreprocessingConfig:
             "feature_selection_method": self.feature_selection_method,
             "n_features_to_select": self.n_features_to_select,
             "selected_features": self.selected_features,
+            "respect_user_selection": self.respect_user_selection,
+            "max_categories_override": self.max_categories_override,
             "outlier_method": self.outlier_method,
             "outlier_threshold": self.outlier_threshold,
             "min_samples_per_class": self.min_samples_per_class,
@@ -336,30 +340,63 @@ class DataPreprocessor:
     
     def encode_categorical_variables(self, df: pd.DataFrame, target_col: str, 
                                    problem_type: ProblemTypeEnum) -> pd.DataFrame:
-        """Encode categorical variables using specified strategy"""
+        """Encode categorical variables with respect for manual feature selection"""
         self.log(f"Encoding categorical variables using strategy: {self.config.categorical_strategy}")
         
-        df = df.copy()
-        categorical_cols = df.select_dtypes(include=['object', 'category']).columns
-        categorical_cols = [col for col in categorical_cols if col != target_col]
+        # Select categorical columns (excluding target)
+        categorical_cols = df.select_dtypes(include=['object', 'category']).columns.tolist()
+        if target_col in categorical_cols:
+            categorical_cols.remove(target_col)
         
-        if len(categorical_cols) == 0:
+        if not categorical_cols:
             self.log("No categorical columns to encode")
             return df
         
         encoded_dfs = []
         original_columns = df.columns.tolist()
         high_cardinality_cols = []  # Track columns to drop
+        manually_selected_high_cardinality = []  # Track user-selected high cardinality columns
         
         for col in categorical_cols:
             unique_count = df[col].nunique()
+            is_manually_selected = (self.config.selected_features and 
+                                  col in self.config.selected_features)
             
-            # Skip high cardinality columns and mark them for removal
-            if unique_count > self.config.max_categories:
-                self.log(f"Skipping high cardinality column {col} (unique values: {unique_count})")
-                high_cardinality_cols.append(col)
-                continue
+            # Determine cardinality limit (use override for user-selected features if specified)
+            cardinality_limit = self.config.max_categories
+            if is_manually_selected and self.config.max_categories_override:
+                cardinality_limit = self.config.max_categories_override
+                self.log(f"Using custom cardinality limit {cardinality_limit} for user-selected feature '{col}'")
             
+            # Handle high cardinality columns differently for manual vs automatic selection
+            if unique_count > cardinality_limit:
+                if is_manually_selected and self.config.respect_user_selection:
+                    # USER SELECTED THIS FEATURE - Warn but respect their choice
+                    manually_selected_high_cardinality.append((col, unique_count))
+                    self.log(f"⚠️  WARNING: User-selected feature '{col}' has high cardinality ({unique_count} unique values)", "warning")
+                    self.log(f"    This may cause memory issues and overfitting. Consider using label encoding instead.", "warning")
+                    self.log(f"    Proceeding with user's selection because respect_user_selection=True...", "info")
+                    
+                    # For user-selected high cardinality features, use label encoding instead of one-hot
+                    if self.config.categorical_strategy == "onehot":
+                        self.log(f"    Switching to label encoding for high cardinality user-selected feature: {col}")
+                        encoder = LabelEncoder()
+                        df[f"{col}_encoded"] = encoder.fit_transform(df[col])
+                        self.transformations[f"label_{col}"] = encoder
+                        self.log(f"Label encoded user-selected high cardinality feature: {col}")
+                        # Mark original column for removal after processing
+                        high_cardinality_cols.append(col)
+                        continue
+                else:
+                    # AUTOMATICALLY DETECTED OR USER OVERRIDE DISABLED - Skip and warn
+                    if is_manually_selected:
+                        self.log(f"Skipping user-selected high cardinality column {col} because respect_user_selection=False", "warning")
+                    else:
+                        self.log(f"Skipping high cardinality column {col} (unique values: {unique_count})")
+                    high_cardinality_cols.append(col)
+                    continue
+            
+            # Standard categorical encoding for normal cardinality columns
             if self.config.categorical_strategy == "onehot":
                 # One-hot encoding
                 encoder = OneHotEncoder(
@@ -395,18 +432,44 @@ class DataPreprocessor:
                 self.transformations[f"ordinal_{col}"] = encoder
                 self.log(f"Ordinal encoded {col}")
         
-        # Drop high cardinality columns
+        # Handle column dropping with clear user feedback
+        dropped_user_features = []
+        dropped_auto_features = []
+        
         if high_cardinality_cols:
+            for col in high_cardinality_cols:
+                if (self.config.selected_features and col in self.config.selected_features):
+                    dropped_user_features.append(col)
+                else:
+                    dropped_auto_features.append(col)
+            
+            # Drop the original categorical columns
             df = df.drop(columns=high_cardinality_cols)
-            self.log(f"Dropped high cardinality columns: {high_cardinality_cols}")
+            
+            # Provide clear feedback about what was dropped and why
+            if dropped_auto_features:
+                self.log(f"Automatically dropped high cardinality columns: {dropped_auto_features}")
+            
+            if dropped_user_features:
+                self.log(f"🔄 Processed user-selected high cardinality columns: {dropped_user_features}")
+                self.log(f"   → Original categorical columns replaced with encoded versions")
+        
+        # Generate comprehensive summary for user-selected high cardinality features
+        if manually_selected_high_cardinality:
+            self.log("📊 High Cardinality Feature Summary:", "info")
+            for col, count in manually_selected_high_cardinality:
+                self.log(f"   • '{col}': {count} unique values (user-selected, processed with label encoding)")
+            self.log("💡 Recommendation: Consider grouping rare categories or using feature engineering", "info")
         
         # Combine original dataframe with one-hot encoded columns
         if encoded_dfs:
             df = pd.concat([df] + encoded_dfs, axis=1)
-            # Drop original categorical columns that were one-hot encoded
+            # Drop original categorical columns that were one-hot encoded (but not those handled above)
             onehot_encoded_cols = [col for col in categorical_cols 
-                                 if f"onehot_{col}" in self.transformations]
-            df = df.drop(columns=onehot_encoded_cols)
+                                 if f"onehot_{col}" in self.transformations and col not in high_cardinality_cols]
+            if onehot_encoded_cols:
+                df = df.drop(columns=onehot_encoded_cols)
+                self.log(f"Dropped original categorical columns after one-hot encoding: {onehot_encoded_cols}")
             
         return df
     
@@ -543,82 +606,176 @@ class DataPreprocessor:
         return X_train, X_test, y_train, y_test
     
     def apply_manual_feature_selection(self, df: pd.DataFrame, target_col: str) -> pd.DataFrame:
-        """Apply manual feature selection if specified in config"""
+        """Apply manual feature selection with comprehensive validation and user feedback"""
         if not self.config.selected_features:
             self.log("No manual feature selection specified, using all features")
             return df
         
-        self.log(f"Applying manual feature selection: {len(self.config.selected_features)} features selected")
+        self.log(f"🎯 MANUAL FEATURE SELECTION: User selected {len(self.config.selected_features)} features")
+        self.log(f"   User's selection: {self.config.selected_features}")
         
         # Ensure target column is included
         selected_features = list(self.config.selected_features)
         if target_col not in selected_features:
             selected_features.append(target_col)
+            self.log(f"   ✓ Added target column '{target_col}' to selection")
         
-        # Check which features exist in the dataframe
+        # Comprehensive feature validation
         available_features = df.columns.tolist()
         valid_features = [col for col in selected_features if col in available_features]
         missing_features = [col for col in selected_features if col not in available_features]
         
-        if missing_features:
-            self.log(f"Warning: Selected features not found in dataset: {missing_features}", "warning")
+        # Feature analysis for user feedback
+        categorical_features = []
+        numerical_features = []
+        high_cardinality_features = []
         
-        if not valid_features or (len(valid_features) == 1 and valid_features[0] == target_col):
-            raise ValueError(f"No valid features selected. Available features: {available_features}")
+        for col in valid_features:
+            if col != target_col:  # Skip target for analysis
+                if df[col].dtype in ['object', 'category']:
+                    categorical_features.append(col)
+                    unique_count = df[col].nunique()
+                    if unique_count > self.config.max_categories:
+                        high_cardinality_features.append((col, unique_count))
+                else:
+                    numerical_features.append(col)
+        
+        # Provide detailed feedback to user
+        if missing_features:
+            self.log(f"❌ MISSING FEATURES: {missing_features}", "warning")
+            self.log(f"   Available features in dataset: {available_features}", "warning")
+            self.log(f"   These features will be ignored", "warning")
+        
+        if high_cardinality_features:
+            self.log("⚠️  HIGH CARDINALITY FEATURES DETECTED:", "warning")
+            for col, count in high_cardinality_features:
+                self.log(f"   • '{col}': {count} unique values (may cause memory/performance issues)", "warning")
+            self.log("   💡 Consider: grouping categories, using embeddings, or selecting different features", "warning")
+        
+        # Validate we have enough valid features
+        non_target_features = [col for col in valid_features if col != target_col]
+        if not non_target_features:
+            available_non_target = [col for col in available_features if col != target_col]
+            raise ValueError(
+                f"❌ NO VALID FEATURES SELECTED!\n"
+                f"   Your selection: {self.config.selected_features}\n"
+                f"   Missing features: {missing_features}\n"
+                f"   Available features: {available_non_target}\n"
+                f"   Please select features that exist in your dataset."
+            )
         
         # Filter dataframe to only include selected features
         df_filtered = df[valid_features].copy()
         
-        self.log(f"Manual feature selection applied: {len(valid_features)} features retained")
-        self.log(f"Selected features: {[col for col in valid_features if col != target_col]}")
+        # Final summary for user
+        self.log(f"✅ FEATURE SELECTION APPLIED:")
+        self.log(f"   • Total features retained: {len(valid_features)} (including target)")
+        self.log(f"   • Feature types: {len(numerical_features)} numerical, {len(categorical_features)} categorical")
+        self.log(f"   • Selected features: {non_target_features}")
+        
+        if len(non_target_features) < len(self.config.selected_features):
+            self.log(f"   ⚠️  Note: {len(self.config.selected_features) - len(non_target_features)} features were unavailable", "warning")
         
         return df_filtered
     
     def preprocess_data(self, df: pd.DataFrame, target_col: str, 
                        problem_type: ProblemTypeEnum) -> PreprocessingResult:
-        """Main preprocessing pipeline"""
-        self.log("Starting data preprocessing pipeline")
+        """Main preprocessing pipeline with enhanced user feedback"""
+        self.log("🚀 STARTING DATA PREPROCESSING PIPELINE")
         
         # Analyze original data quality
         self.preprocessing_summary = self.analyze_data_quality(df, target_col)
-        self.log(f"Data analysis: {self.preprocessing_summary['total_rows']} rows, "
+        self.log(f"📊 DATASET OVERVIEW: {self.preprocessing_summary['total_rows']} rows, "
                 f"{self.preprocessing_summary['total_columns']} columns")
+        
+        # Log initial feature overview
+        original_features = [col for col in df.columns if col != target_col]
+        self.log(f"   • Available features: {len(original_features)}")
+        self.log(f"   • Target column: '{target_col}'")
         
         # Check memory usage
         memory_mb = self.preprocessing_summary["memory_usage_mb"]
         if memory_mb > self.config.max_memory_mb:
-            self.log(f"Warning: Dataset size ({memory_mb:.1f}MB) exceeds limit ({self.config.max_memory_mb}MB)")
+            self.log(f"⚠️  WARNING: Dataset size ({memory_mb:.1f}MB) exceeds limit ({self.config.max_memory_mb}MB)")
         
         # Step 0: Apply manual feature selection FIRST (if specified)
+        self.log("\n" + "="*50)
+        self.log("STEP 1: FEATURE SELECTION")
+        self.log("="*50)
         df_selected = self.apply_manual_feature_selection(df, target_col)
+        features_after_selection = [col for col in df_selected.columns if col != target_col]
         
         # Step 1: Handle missing values
+        self.log("\n" + "="*50)
+        self.log("STEP 2: MISSING VALUES HANDLING")
+        self.log("="*50)
         df_cleaned = self.handle_missing_values(df_selected, target_col)
         
         # Step 2: Encode categorical variables
+        self.log("\n" + "="*50)
+        self.log("STEP 3: CATEGORICAL ENCODING")
+        self.log("="*50)
         df_encoded = self.encode_categorical_variables(df_cleaned, target_col, problem_type)
+        features_after_encoding = [col for col in df_encoded.columns if col != target_col]
         
         # Step 3: Split the data
+        self.log("\n" + "="*50)
+        self.log("STEP 4: TRAIN/TEST SPLIT")
+        self.log("="*50)
         X_train, X_test, y_train, y_test = self.split_data(df_encoded, target_col, problem_type)
         
         # Step 4: Scale features
+        self.log("\n" + "="*50)
+        self.log("STEP 5: FEATURE SCALING")
+        self.log("="*50)
         X_train_scaled, X_test_scaled = self.scale_features(X_train, X_test)
         
         # Step 5: Automatic feature selection (optional, only if no manual selection was done)
+        self.log("\n" + "="*50)
+        self.log("STEP 6: AUTOMATIC FEATURE SELECTION")
+        self.log("="*50)
         if not self.config.selected_features and self.config.feature_selection_method:
             X_train_final, X_test_final = self.select_features(X_train_scaled, X_test_scaled, y_train, problem_type)
         else:
             X_train_final, X_test_final = X_train_scaled, X_test_scaled
             if self.config.selected_features:
-                self.log("Skipping automatic feature selection because manual selection was applied")
+                self.log("⏭️  Skipping automatic feature selection (user manually selected features)")
+            else:
+                self.log("⏭️  Skipping automatic feature selection (not configured)")
         
         # Store final feature names
         self.feature_names = X_train_final.columns.tolist()
         
-        # Create preprocessing summary
+        # Create detailed preprocessing summary with user impact analysis
         preprocessing_steps = []
+        user_impact_summary = {
+            "original_features": original_features,
+            "user_selected_features": self.config.selected_features,
+            "features_after_selection": features_after_selection,
+            "features_after_encoding": features_after_encoding,
+            "final_features": self.feature_names,
+            "features_dropped_by_user": [],
+            "features_dropped_automatically": [],
+            "features_transformed": []
+        }
+        
+        # Track what happened to user's selections
         if self.config.selected_features:
             preprocessing_steps.append(f"manual_feature_selection_{len(self.config.selected_features)}_features")
+            user_impact_summary["features_dropped_by_user"] = [
+                f for f in original_features if f not in features_after_selection
+            ]
+        
+        # Track automatic drops
+        user_impact_summary["features_dropped_automatically"] = [
+            f for f in features_after_selection if f not in features_after_encoding
+        ]
+        
+        # Track transformations
+        user_impact_summary["features_transformed"] = [
+            f for f in features_after_encoding if f not in features_after_selection
+        ]
+        
         if self.config.missing_strategy != "none":
             preprocessing_steps.append(f"missing_values_{self.config.missing_strategy}")
         if self.config.categorical_strategy != "none":
@@ -628,8 +785,47 @@ class DataPreprocessor:
         if not self.config.selected_features and self.config.feature_selection_method:
             preprocessing_steps.append(f"feature_selection_{self.config.feature_selection_method}")
         
-        self.log(f"Preprocessing completed: {len(preprocessing_steps)} steps applied")
-        self.log(f"Final feature set: {len(self.feature_names)} features")
+        # Final comprehensive summary
+        self.log("\n" + "="*60)
+        self.log("🎉 PREPROCESSING COMPLETED - FINAL SUMMARY")
+        self.log("="*60)
+        
+        self.log(f"📈 PROCESSING STEPS: {len(preprocessing_steps)} steps applied")
+        for i, step in enumerate(preprocessing_steps, 1):
+            self.log(f"   {i}. {step}")
+        
+        self.log(f"\n🔢 FEATURE TRANSFORMATION SUMMARY:")
+        self.log(f"   • Started with: {len(original_features)} features")
+        
+        if self.config.selected_features:
+            self.log(f"   • User selected: {len(self.config.selected_features)} features")
+            self.log(f"   • After selection: {len(features_after_selection)} features")
+        
+        self.log(f"   • After encoding: {len(features_after_encoding)} features")
+        self.log(f"   • Final features: {len(self.feature_names)} features")
+        
+        self.log(f"\n📊 FINAL DATASET:")
+        self.log(f"   • Training set: {X_train_final.shape}")
+        self.log(f"   • Test set: {X_test_final.shape}")
+        self.log(f"   • Final features: {self.feature_names}")
+        
+        # User impact report
+        if self.config.selected_features:
+            self.log(f"\n👤 USER SELECTION IMPACT:")
+            self.log(f"   • Features you selected: {self.config.selected_features}")
+            self.log(f"   • Features kept as-is: {[f for f in self.config.selected_features if f in self.feature_names]}")
+            
+            transformed_originals = [f for f in self.config.selected_features if f not in self.feature_names]
+            if transformed_originals:
+                self.log(f"   • Features transformed: {transformed_originals}")
+                self.log(f"     (Original categorical features become multiple encoded columns)")
+            
+            dropped_features = [f for f in self.config.selected_features if f not in features_after_selection]
+            if dropped_features:
+                self.log(f"   ⚠️  Features not found: {dropped_features}", "warning")
+        
+        # Store enhanced summary
+        self.preprocessing_summary.update(user_impact_summary)
         
         return PreprocessingResult(
             X_train=X_train_final,

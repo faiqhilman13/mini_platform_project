@@ -10,7 +10,7 @@ export interface UploadedFile {
   message?: string;
 }
 
-export type PipelineType = 'PDF_SUMMARIZER' | 'RAG_CHATBOT' | 'TEXT_CLASSIFIER' | 'ML_TRAINING';
+export type PipelineType = 'PDF_SUMMARIZER' | 'RAG_CHATBOT' | 'ML_TRAINING';
 
 export type PipelineStatus = 'QUEUED' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
 

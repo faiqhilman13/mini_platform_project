@@ -15,10 +15,12 @@ class PipelineRunStatus(str, Enum):
     CANCELLED = "CANCELLED"  # Flow was cancelled (if cancellation is implemented)
 
 class PipelineType(str, Enum):
+    """
+    Defines the available pipeline types in the system.
+    """
     PDF_SUMMARIZER = "PDF_SUMMARIZER"
     RAG_CHATBOT = "RAG_CHATBOT"
-    TEXT_CLASSIFIER = "TEXT_CLASSIFIER"
-    ML_TRAINING = "ML_TRAINING"  # DS1.2.1: Added for ML pipeline support
+    ML_TRAINING = "ML_TRAINING"
 
 class PipelineRunBase(SQLModel):
     pipeline_type: PipelineType

@@ -30,6 +30,9 @@ The Mini IDP (Internal Developer Platform) is a **fully functional** self-serve 
 - ✅ **🎨 UI Enhancements**: Improved button visibility and consistent design system
 - ✅ **📚 Documentation**: Created comprehensive security guide and migration documentation
 - ✅ **🔬 ML Training Revolution**: Fixed manual feature selection and implemented deterministic training results
+- ✅ **🤖 AI Page**: Created dedicated AI & LLM page consolidating RAG, Summarizer, and Classifier
+- ✅ **🎯 UX Critical Fix**: Resolved manual feature selection respect issue with comprehensive user control
+- ✅ **🎨 UI/UX Transparency**: Complete frontend-backend alignment for ML preprocessing with real-time warnings
 
 **Database Architecture Revolution (2025-06-02):**
 - 🔄 **Migration**: SQLite → Supabase PostgreSQL (cloud + local Docker)
@@ -313,63 +316,65 @@ CREATE POLICY "file_profiling_access" ON dataprofiling
 
 ### **Solution Implemented: Smart Feature Selection Pipeline** 🎯
 
-#### **1. Enhanced Preprocessing Configuration**
-```python
-@dataclass 
-class PreprocessingConfig:
-    # NEW: Manual feature selection support
-    selected_features: Optional[List[str]] = None  # Explicit list of features to use
-```
+#### **Critical UX Issue - User Feature Respect**
+**NEW - COMPLETED 2025-06-02:** Fixed the critical UX issue where user-selected features were silently dropped.
 
-#### **2. Manual Feature Selection Logic**
-```python
-def apply_manual_feature_selection(self, df: pd.DataFrame, target_col: str) -> pd.DataFrame:
-    """Apply manual feature selection if specified in config"""
-    if not self.config.selected_features:
-        return df  # Use all features
-    
-    # Filter to only selected features + target
-    selected_features = list(self.config.selected_features)
-    if target_col not in selected_features:
-        selected_features.append(target_col)
-    
-    df_filtered = df[selected_features].copy()
-    self.log(f"Manual feature selection applied: {len(selected_features)} features retained")
-    return df_filtered
-```
+**The Problem:**
+- User selects: `['student_id', 'study_hours_per_day', 'social_media_hours']` (3 features)
+- System logs: "Manual feature selection applied: 4 features retained"
+- System silently drops: "Skipping high cardinality column student_id" 
+- Result: Only 2 features trained, violating user autonomy
 
-#### **3. Updated Preprocessing Pipeline Flow**
-```python
-def preprocess_data(self, df: pd.DataFrame, target_col: str, problem_type: ProblemTypeEnum):
-    # Step 0: Apply manual feature selection FIRST (before any other processing)
-    df_selected = self.apply_manual_feature_selection(df, target_col)
-    
-    # Step 1: Handle missing values (only on selected features)
-    df_cleaned = self.handle_missing_values(df_selected, target_col)
-    
-    # Step 2: Encode categorical variables (only selected features)
-    df_encoded = self.encode_categorical_variables(df_cleaned, target_col, problem_type)
-    
-    # Step 3: Split, scale, etc. (only on selected features)
-    # ...
-    
-    # Step 5: Skip automatic feature selection if manual selection was used
-    if not self.config.selected_features and self.config.feature_selection_method:
-        X_train_final, X_test_final = self.select_features(X_train_scaled, X_test_scaled, y_train, problem_type)
-    else:
-        X_train_final, X_test_final = X_train_scaled, X_test_scaled
-        if self.config.selected_features:
-            self.log("Skipping automatic feature selection because manual selection was applied")
-```
+**The Solution:**
+- ✅ **Strict User Respect**: User-selected features are ALWAYS processed, even high cardinality ones
+- ✅ **Smart Adaptation**: Switch from one-hot to label encoding for high cardinality user selections
+- ✅ **Clear Warnings**: Comprehensive warnings about potential issues with explanations
+- ✅ **Transparent Logging**: Step-by-step processing with user impact reports
+- ✅ **Configuration Control**: New options for `respect_user_selection` and `max_categories_override`
 
-#### **4. Configuration Mapping Enhancement**
-```python
-# In create_preprocessing_config:
-elif key in ["feature_columns", "features"]:
-    # Handle user's explicit feature selection from frontend
-    config.selected_features = value
-    logger.info(f"Applied manual feature selection: {len(value)} features = {value}")
-```
+#### **NEW: Complete UI/UX Transparency for ML Preprocessing** 🎨
+
+**LATEST ENHANCEMENT - COMPLETED 2025-06-02:** Added comprehensive UI feedback for high cardinality features to achieve perfect frontend-backend alignment.
+
+**What Users Now See:**
+
+1. **🚨 Visual Indicators on Feature Cards:**
+   - **Orange left border** for high cardinality features (>20 unique values)
+   - **AlertTriangle icon** to draw attention
+   - **Unique count display** showing exact values (e.g., "High cardinality (1000 unique values)")
+
+2. **⚠️ Proactive Warning Panel** when selecting high cardinality features:
+   ```
+   ⚠️ High Cardinality Features Selected
+   The following features have many unique values and will be automatically transformed:
+   • student_id (1000 unique values → will use label encoding instead of one-hot)
+   💡 This is normal - your features will still be trained on as you selected.
+   ```
+
+3. **📊 Real-time Preprocessing Preview** in configuration summary:
+   - **Numerical features:** `feature_name → Standard scaling`
+   - **Normal categorical:** `feature_name → One-hot encoding`
+   - **High cardinality categorical:** `feature_name → Label encoding` (highlighted in orange)
+
+4. **ℹ️ Educational Information Panel** for available features:
+   ```
+   ℹ️ High Cardinality Features Available
+   Some features have many unique values (student_id, user_id).
+   If selected, they'll be transformed using label encoding for optimal performance.
+   ```
+
+**UX Impact:**
+- ✅ **Zero Surprises**: UI warnings now perfectly match backend logs
+- ✅ **Complete Transparency**: Users see exactly what transformations will happen before training
+- ✅ **Informed Decisions**: Understanding of trade-offs for high cardinality feature inclusion
+- ✅ **Educational Value**: Built-in learning about ML preprocessing strategies
+- ✅ **User Confidence**: Complete control with complete visibility
+
+**Technical Implementation:**
+- Enhanced `FeatureSelection` component with profile data access
+- High cardinality threshold synchronization (>20 unique values matches backend)
+- Real-time preview updates as users change selections
+- TypeScript-safe implementation with proper error handling
 
 ### **Deterministic Training Results System** 🎲
 
@@ -480,8 +485,9 @@ src/
 │   ├── FileDetailsPage.tsx    # 🔄 Enhanced security and permissions ✅ ENHANCED
 │   ├── ChatPage.tsx           # RAG chatbot interface ✅ WORKING
 │   ├── PipelineResultsPage.tsx # 🔄 Enhanced with improved button visibility ✅ ENHANCED
-│   ├── DatasetConfigPage.tsx  # Dataset configuration and ML setup ✅ WORKING
+│   ├── DatasetConfigPage.tsx  # 🔄 Enhanced with high cardinality UI warnings ✅ ENHANCED  
 │   ├── MLResultsPage.tsx      # 🔄 Supabase-powered ML results ✅ ENHANCED
+│   ├── 🆕 AIPage.tsx          # 🆕 Dedicated AI & LLM page with RAG, Summarizer, Classifier ✅ NEW
 │   └── ...other pages
 ├── components/
 │   ├── ui/                    # 🔄 Enhanced base UI components ✅ ENHANCED
@@ -593,6 +599,19 @@ app/
 - **Loading States**: Better user feedback during operations
 - **Error Handling**: Graceful error recovery with user-friendly messages
 
+### **🔬 ML Training Revolution**
+- **Manual Feature Selection**: Complete user control over feature selection with backend respect
+- **Deterministic Training**: Unique seeds per pipeline run for reproducible results
+- **Smart Preprocessing**: Adaptive encoding strategies for high cardinality features
+- **Transparent Logging**: Step-by-step processing with comprehensive user impact reports
+
+### **🎨 UI/UX Transparency Achievement**
+- **Frontend-Backend Alignment**: Perfect synchronization between UI warnings and backend processing
+- **Real-time Feedback**: Live preprocessing preview showing exact transformations
+- **Educational Interface**: Built-in learning about ML preprocessing strategies
+- **Zero Surprises**: Complete transparency about feature transformations before training
+- **User Confidence**: Full control with full visibility into the ML pipeline
+
 ## Performance Achievements ✅
 
 ### **Database Performance**
@@ -632,6 +651,12 @@ app/
 
 ### RAG Chatbot (Vector + PostgreSQL)
 - `POST /api/v1/rag/ask` - RAG with Supabase conversation tracking ✅
+
+### 🆕 AI & LLM Functionality (Consolidated in AI Page)
+- **RAG Chatbot**: Document-based Q&A with context retrieval ✅
+- **PDF Summarizer**: AI-powered document summarization ✅  
+- **Text Classifier**: Intelligent text categorization ✅
+- **Unified Interface**: Tabbed interface for all AI operations ✅
 
 ### Data Operations (PostgreSQL Powered)
 - `GET /api/v1/data/{file_id}/preview` - Cached previews in PostgreSQL ✅
@@ -713,7 +738,7 @@ app/
 
 ## Conclusion
 
-The Mini IDP platform has achieved a **major architectural milestone** with the successful migration to Supabase PostgreSQL and implementation of enterprise-grade security, followed by a **critical ML training configuration revolution** that fixed fundamental user experience issues.
+The Mini IDP platform has achieved a **major architectural milestone** with the successful migration to Supabase PostgreSQL and implementation of enterprise-grade security, followed by a **critical ML training configuration revolution** that fixed fundamental user experience issues, and now completed with **perfect UI/UX transparency** for ML preprocessing.
 
 **Key Revolutionary Changes:**
 - 🚀 **Database Architecture**: SQLite → Supabase PostgreSQL with 6-table optimized schema
@@ -723,6 +748,7 @@ The Mini IDP platform has achieved a **major architectural milestone** with the 
 - 🐛 **Issue Resolution**: Database sync problems diagnosed and permanently resolved
 - 📚 **Knowledge Management**: Comprehensive documentation and security guides
 - 🔬 **ML Training Revolution**: Fixed manual feature selection and deterministic training results
+- 🎨 **UI/UX Transparency**: Complete frontend-backend alignment with real-time preprocessing feedback
 
 **ML Training Breakthrough:**
 - ✅ **User Control Restored**: Manual feature selection now works exactly as configured
@@ -730,11 +756,13 @@ The Mini IDP platform has achieved a **major architectural milestone** with the 
 - ✅ **Smart Preprocessing**: Features selected first, then preprocessing applied only to selected features
 - ✅ **Clear User Experience**: Feature importance shows only the features user actually selected
 - ✅ **Configuration Integrity**: User's choices are respected throughout the entire training pipeline
+- ✅ **Perfect Transparency**: UI warnings and preprocessing preview match backend processing exactly
 
 **System Status: 🟢 FULLY OPERATIONAL & ENTERPRISE READY**
 **Database: 🟢 SUPABASE POSTGRESQL (CLOUD + LOCAL)**
 **Security: 🟢 ENTERPRISE-GRADE RLS IMPLEMENTED**
 **ML Training: 🟢 USER CONFIGURATION FULLY RESPECTED**
+**UI/UX: 🟢 COMPLETE TRANSPARENCY & USER CONTROL**
 **Performance: 🚀 OPTIMIZED WITH POSTGRESQL INDEXES**
 **Documentation: 📚 COMPREHENSIVE GUIDES CREATED**
-**Latest Major Update: 📅 June 2, 2025 - ML TRAINING CONFIGURATION REVOLUTION**
+**Latest Major Update: 📅 June 2, 2025 - UI/UX TRANSPARENCY ACHIEVEMENT**

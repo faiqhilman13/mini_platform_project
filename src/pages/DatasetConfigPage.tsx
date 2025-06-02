@@ -10,7 +10,8 @@ import {
   CheckCircle,
   Info,
   Zap,
-  BarChart3
+  BarChart3,
+  AlertTriangle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import PageLayout from '../components/layout/PageLayout';
@@ -34,6 +35,7 @@ interface FeatureSelectionProps {
   targetColumn: string;
   onFeaturesChange: (features: string[]) => void;
   recommendations?: string[];
+  profile?: DatasetProfileType;
 }
 
 const FeatureSelection = ({ 
@@ -41,9 +43,26 @@ const FeatureSelection = ({
   selectedFeatures, 
   targetColumn,
   onFeaturesChange,
-  recommendations = []
+  recommendations = [],
+  profile
 }: FeatureSelectionProps) => {
   const availableFeatures = columns.filter(col => col !== targetColumn);
+  
+  // Define high cardinality threshold (matches backend)
+  const HIGH_CARDINALITY_THRESHOLD = 20;
+  
+  // Get high cardinality features from profile
+  const getHighCardinalityFeatures = () => {
+    if (!profile?.columns) return [];
+    return profile.columns
+      .filter(col => col.name !== targetColumn && col.unique_count > HIGH_CARDINALITY_THRESHOLD)
+      .map(col => col.name);
+  };
+
+  const highCardinalityFeatures = getHighCardinalityFeatures();
+  const selectedHighCardinalityFeatures = selectedFeatures.filter(feature => 
+    highCardinalityFeatures.includes(feature)
+  );
   
   const toggleFeature = (feature: string) => {
     if (selectedFeatures.includes(feature)) {
@@ -63,6 +82,12 @@ const FeatureSelection = ({
 
   const selectRecommended = () => {
     onFeaturesChange(recommendations.filter(rec => availableFeatures.includes(rec)));
+  };
+
+  const getFeatureUniqueCount = (featureName: string): number | null => {
+    if (!profile?.columns) return null;
+    const column = profile.columns.find(col => col.name === featureName);
+    return column?.unique_count || null;
   };
 
   return (
@@ -102,10 +127,43 @@ const FeatureSelection = ({
         </div>
       </div>
 
+      {/* High Cardinality Warning */}
+      {selectedHighCardinalityFeatures.length > 0 && (
+        <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
+          <div className="flex items-start">
+            <AlertTriangle className="h-4 w-4 text-orange-600 mt-0.5 mr-2 flex-shrink-0" />
+            <div>
+              <p className="text-sm font-medium text-orange-800">High Cardinality Features Selected</p>
+              <p className="text-xs text-orange-700 mt-1">
+                The following features have many unique values and will be automatically transformed:
+              </p>
+              <ul className="text-xs text-orange-700 mt-2 space-y-1">
+                {selectedHighCardinalityFeatures.map(feature => {
+                  const uniqueCount = getFeatureUniqueCount(feature);
+                  return (
+                    <li key={feature} className="flex items-center">
+                      <span className="font-medium">{feature}</span>
+                      <span className="ml-2 text-orange-600">
+                        ({uniqueCount} unique values → will use label encoding instead of one-hot)
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+              <p className="text-xs text-orange-600 mt-2 font-medium">
+                💡 This is normal - your features will still be trained on as you selected.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-64 overflow-y-auto">
         {availableFeatures.map((feature) => {
           const isSelected = selectedFeatures.includes(feature);
           const isRecommended = recommendations.includes(feature);
+          const isHighCardinality = highCardinalityFeatures.includes(feature);
+          const uniqueCount = getFeatureUniqueCount(feature);
           
           return (
             <motion.div
@@ -119,7 +177,9 @@ const FeatureSelection = ({
                   isSelected
                     ? 'border-blue-500 bg-blue-50 text-blue-900'
                     : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
-                } ${isRecommended ? 'ring-2 ring-yellow-200' : ''}`}
+                } ${isRecommended ? 'ring-2 ring-yellow-200' : ''} ${
+                  isHighCardinality ? 'border-l-4 border-l-orange-400' : ''
+                }`}
               >
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium truncate">{feature}</span>
@@ -127,14 +187,29 @@ const FeatureSelection = ({
                     {isRecommended && (
                       <Zap className="h-3 w-3 text-yellow-500" />
                     )}
+                    {isHighCardinality && (
+                      <AlertTriangle className="h-3 w-3 text-orange-500" />
+                    )}
                     {isSelected && (
                       <CheckCircle className="h-4 w-4 text-blue-500" />
                     )}
                   </div>
                 </div>
-                {isRecommended && (
-                  <p className="text-xs text-yellow-700 mt-1">Recommended feature</p>
-                )}
+                <div className="mt-1 space-y-1">
+                  {isRecommended && (
+                    <p className="text-xs text-yellow-700">Recommended feature</p>
+                  )}
+                  {isHighCardinality && (
+                    <p className="text-xs text-orange-700">
+                      High cardinality ({uniqueCount} unique values)
+                    </p>
+                  )}
+                  {uniqueCount && !isHighCardinality && (
+                    <p className="text-xs text-gray-500">
+                      {uniqueCount} unique values
+                    </p>
+                  )}
+                </div>
               </button>
             </motion.div>
           );
@@ -149,6 +224,22 @@ const FeatureSelection = ({
               <p className="text-sm font-medium text-yellow-800">Feature Recommendations</p>
               <p className="text-xs text-yellow-700 mt-1">
                 Based on data analysis, these features are likely to be most informative for your model.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* General High Cardinality Info */}
+      {highCardinalityFeatures.length > 0 && selectedHighCardinalityFeatures.length === 0 && (
+        <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+          <div className="flex items-start">
+            <Info className="h-4 w-4 text-gray-600 mt-0.5 mr-2 flex-shrink-0" />
+            <div>
+              <p className="text-sm font-medium text-gray-800">High Cardinality Features Available</p>
+              <p className="text-xs text-gray-700 mt-1">
+                Some features have many unique values ({highCardinalityFeatures.join(', ')}). 
+                If selected, they'll be transformed using label encoding for optimal performance.
               </p>
             </div>
           </div>
@@ -571,6 +662,49 @@ const DatasetConfigPage = () => {
                     </span>
                   </div>
                 </div>
+                
+                {/* Preprocessing Preview */}
+                {selectedFeatures.length > 0 && profile && (
+                  <div className="mt-4 pt-4 border-t border-blue-200">
+                    <h4 className="text-sm font-medium text-blue-900 mb-2">Preprocessing Preview:</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                      <div>
+                        <span className="font-medium text-blue-800">Numerical features:</span>
+                        <div className="text-blue-700 mt-1">
+                          {selectedFeatures.filter(feature => {
+                            const column = profile.columns?.find(col => col.name === feature);
+                            return column && ['int64', 'float64', 'number'].includes(column.data_type.toLowerCase());
+                          }).map(feature => (
+                            <div key={feature} className="flex items-center justify-between">
+                              <span>{feature}</span>
+                              <span className="text-blue-600">→ Standard scaling</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <span className="font-medium text-blue-800">Categorical features:</span>
+                        <div className="text-blue-700 mt-1">
+                          {selectedFeatures.filter(feature => {
+                            const column = profile.columns?.find(col => col.name === feature);
+                            return column && ['object', 'string', 'category'].includes(column.data_type.toLowerCase());
+                          }).map(feature => {
+                            const column = profile.columns?.find(col => col.name === feature);
+                            const isHighCardinality = column && column.unique_count > 20;
+                            return (
+                              <div key={feature} className="flex items-center justify-between">
+                                <span className={isHighCardinality ? 'font-medium' : ''}>{feature}</span>
+                                <span className={`${isHighCardinality ? 'text-orange-600 font-medium' : 'text-blue-600'}`}>
+                                  → {isHighCardinality ? 'Label encoding' : 'One-hot encoding'}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </motion.div>
@@ -628,7 +762,7 @@ const DatasetConfigPage = () => {
                           </select>                        </div>                        {targetColumn && (                          <div className="space-y-3">                            <div>                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Problem Type:
                               </label>
-                              <div className="flex space-x-4">                                <label className="flex items-center">                                  <input                                    type="radio"                                    value="CLASSIFICATION"                                    checked={problemType === 'CLASSIFICATION'}                                    onChange={(e) => setProblemType(e.target.value as 'CLASSIFICATION')}                                    className="mr-2"                                  />                                  Classification                                </label>                                <label className="flex items-center">                                  <input                                    type="radio"                                    value="REGRESSION"                                    checked={problemType === 'REGRESSION'}                                    onChange={(e) => setProblemType(e.target.value as 'REGRESSION')}                                    className="mr-2"                                  />                                  Regression                                </label>                              </div>                            </div>                            {autoDetectedType && (                              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">                                <div className="flex items-start">                                  <Info className="h-4 w-4 text-blue-600 mt-0.5 mr-2 flex-shrink-0" />                                  <div>                                    <p className="text-sm font-medium text-blue-800">                                      Auto-detected: {autoDetectedType}                                    </p>                                    <p className="text-xs text-blue-700 mt-1">                                      Based on the target column characteristics. You can change this if needed.                                    </p>                                  </div>                                </div>                              </div>                            )}                          </div>                        )}                      </div>                    </CardContent>                  </Card>                  {/* Feature Selection */}                  <Card>                    <CardHeader>                      <CardTitle className="flex items-center">                        <Settings className="h-5 w-5 mr-2 text-green-600" />                        Feature Selection                      </CardTitle>                    </CardHeader>                    <CardContent>                      {targetColumn ? (                        <FeatureSelection                          columns={profile?.columns?.map(col => col.name) || []}                          selectedFeatures={selectedFeatures}                          targetColumn={targetColumn}                          onFeaturesChange={setSelectedFeatures}                          recommendations={getFeatureRecommendations()}                        />                      ) : (                        <div className="text-center py-8 text-gray-500">                          Please select a target column first                        </div>                      )}                    </CardContent>                  </Card>                </div>              ) : null            }          ]}          defaultTabId={activeTab}          onChange={setActiveTab}        />
+                              <div className="flex space-x-4">                                <label className="flex items-center">                                  <input                                    type="radio"                                    value="CLASSIFICATION"                                    checked={problemType === 'CLASSIFICATION'}                                    onChange={(e) => setProblemType(e.target.value as 'CLASSIFICATION')}                                    className="mr-2"                                  />                                  Classification                                </label>                                <label className="flex items-center">                                  <input                                    type="radio"                                    value="REGRESSION"                                    checked={problemType === 'REGRESSION'}                                    onChange={(e) => setProblemType(e.target.value as 'REGRESSION')}                                    className="mr-2"                                  />                                  Regression                                </label>                              </div>                            </div>                            {autoDetectedType && (                              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">                                <div className="flex items-start">                                  <Info className="h-4 w-4 text-blue-600 mt-0.5 mr-2 flex-shrink-0" />                                  <div>                                    <p className="text-sm font-medium text-blue-800">                                      Auto-detected: {autoDetectedType}                                    </p>                                    <p className="text-xs text-blue-700 mt-1">                                      Based on the target column characteristics. You can change this if needed.                                    </p>                                  </div>                                </div>                              </div>                            )}                          </div>                        )}                      </div>                    </CardContent>                  </Card>                  {/* Feature Selection */}                  <Card>                    <CardHeader>                      <CardTitle className="flex items-center">                        <Settings className="h-5 w-5 mr-2 text-green-600" />                        Feature Selection                      </CardTitle>                    </CardHeader>                    <CardContent>                      {targetColumn ? (                        <FeatureSelection                          columns={profile?.columns?.map(col => col.name) || []}                          selectedFeatures={selectedFeatures}                          targetColumn={targetColumn}                          onFeaturesChange={setSelectedFeatures}                          recommendations={getFeatureRecommendations()}                          profile={profile}                        />                      ) : (                        <div className="text-center py-8 text-gray-500">                          Please select a target column first                        </div>                      )}                    </CardContent>                  </Card>                </div>              ) : null            }          ]}          defaultTabId={activeTab}          onChange={setActiveTab}        />
       </div>
     </PageLayout>
   );

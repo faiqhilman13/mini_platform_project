@@ -146,11 +146,16 @@
         - [x] Retrieval and generation logic (LangChain). (2024-08-01)
         - [x] Integrate with orchestrator. (2024-08-01)
     - [x] **P2.3: Text Classifier Pipeline**
-        - [x] `workflows/pipelines/text_classifier.py` (2024-08-01)
+        - [x] `workflows/pipelines/text_classifier.py` (2024-08-01) - **REMOVED 2025-06-02**
         - [x] Define classification schema (rule-based or model-based). (2024-08-01) - *Initial rule-based schema defined*
         - [x] Implement classification logic. (2024-08-01) - *Initial rule-based logic implemented*
         - [x] Integrate with orchestrator. (2024-08-01) - *Basic Prefect flow created*
         - [x] Fix test failures and ensure all tests are passing. (2024-08-02)
+    - [x] **P2.3.1: UX Fixes - Manual Feature Selection (CRITICAL)** (Completed 2025-06-02)
+        - [x] Fix preprocessing logic to respect user's manual feature selection strictly
+        - [x] Add clear warnings/confirmations when selected features have issues (high cardinality)
+        - [x] Implement transparent logging with step-by-step user impact reports  
+        - [x] Add UI feedback for high cardinality feature warnings and transformations ✅ **NEW COMPLETED**
     - [x] **P2.4: Update UI for New Pipelines**
         - [x] Allow selection of RAG or Classifier. (2024-08-01) - *Added pipeline selector (Summarizer, RAG, Classifier) to UploadPage; API already supports type.*
         - [x] UI for interacting with RAG (chat interface). (2024-08-02) - *Created ChatPage with interactive chat interface for RAG documents.*
