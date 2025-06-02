@@ -25,7 +25,7 @@ from app.models.file_models import UploadedFileLog
 from app.models.ml_models import (
     MLPipelineRun, MLPipelineConfig, ProblemTypeEnum, AlgorithmNameEnum,
     MLResult, ModelMetrics, MLPipelineCreateRequest, MLPipelineCreateResponse,
-    MLPipelineStatusResponse, MLPipelineResultResponse
+    MLPipelineStatusResponse, MLPipelineResultResponse, MLModel
 )
 
 # Import ML workflow components
@@ -404,8 +404,17 @@ class MLPipelineOrchestrator:
             
             # Store individual model metrics
             model_metrics_list = []
-            for eval_result in ml_result.evaluation_results:
+            ml_models_list = []
+            for idx, eval_result in enumerate(ml_result.evaluation_results):
                 if not eval_result.error:
+                    # Get corresponding training result
+                    training_result = None
+                    for tr in ml_result.training_results:
+                        if tr.algorithm_name == eval_result.algorithm_name:
+                            training_result = tr
+                            break
+                    
+                    # Create ModelMetrics record
                     metrics_data = ModelMetrics(
                         pipeline_run_id=run_uuid,
                         algorithm_name=eval_result.algorithm_name,
@@ -417,6 +426,26 @@ class MLPipelineOrchestrator:
                         }
                     )
                     model_metrics_list.append(metrics_data)
+                    
+                    # Create individual MLModel record
+                    import time
+                    timestamp = int(time.time() * 1000)
+                    unique_model_id = f"{run_uuid}_{eval_result.algorithm_name}_{timestamp}_{idx}"
+                    
+                    ml_model = MLModel(
+                        model_id=unique_model_id,
+                        pipeline_run_id=ml_pipeline_run.id,
+                        algorithm_name=eval_result.algorithm_name,
+                        hyperparameters=training_result.hyperparameters if training_result else {},
+                        performance_metrics=eval_result.metrics,
+                        primary_metric_value=eval_result.metrics.get('accuracy') or eval_result.metrics.get('r2'),
+                        primary_metric_name='accuracy' if 'accuracy' in eval_result.metrics else 'r2',
+                        training_time_seconds=training_result.training_time if training_result else 0,
+                        feature_importance=eval_result.feature_importance,
+                        model_file_path=training_result.model_path if training_result else None,
+                        training_status="completed"
+                    )
+                    ml_models_list.append(ml_model)
             
             # Update ML pipeline run with results
             ml_pipeline_run.metrics = result_data.best_model_metrics
@@ -427,6 +456,8 @@ class MLPipelineOrchestrator:
             self.db.add(result_data)
             for metrics in model_metrics_list:
                 self.db.add(metrics)
+            for ml_model in ml_models_list:
+                self.db.add(ml_model)
             self.db.add(ml_pipeline_run)
             self.db.commit()
             

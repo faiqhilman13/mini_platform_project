@@ -62,13 +62,13 @@ const PipelineResultsPage = () => {
                   {pipelineRun.result.summary && Array.isArray(pipelineRun.result.summary) ? (
                     <div className="space-y-3">
                       {pipelineRun.result.summary.map((sentence: string, index: number) => (
-                        <p key={index} className="text-gray-700 leading-relaxed">
+                        <p key={index} className="text-gray-700 dark:text-white leading-relaxed">
                           {sentence}
                         </p>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-gray-700 leading-relaxed">
+                    <p className="text-gray-700 dark:text-white leading-relaxed">
                       {pipelineRun.result.summary || pipelineRun.result.content || 'Summary not available'}
                     </p>
                   )}
@@ -161,7 +161,7 @@ const PipelineResultsPage = () => {
               <CardTitle>Pipeline Results</CardTitle>
             </CardHeader>
             <CardContent>
-              <pre className="bg-gray-50 p-4 rounded-lg overflow-auto text-sm">
+              <pre className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg overflow-auto text-sm text-gray-900 dark:text-gray-100">
                 {JSON.stringify(pipelineRun.result, null, 2)}
               </pre>
             </CardContent>
@@ -215,16 +215,17 @@ const PipelineResultsPage = () => {
           size="sm"
           icon={<ChevronLeft className="w-4 h-4" />}
           onClick={() => navigate(-1)}
+          className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
         >
           Back
         </Button>
 
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
               {pipelineRun.pipeline_type.replace('_', ' ')} Results
             </h1>
-            <p className="text-gray-300 mt-2">
+            <p className="text-gray-700 dark:text-gray-300 mt-2">
               Pipeline completed on {formatDate(pipelineRun.updated_at)}
             </p>
           </div>

@@ -166,6 +166,9 @@ class PreprocessingConfig:
     feature_selection_method: Optional[str] = None  # selectkbest, rfe, lasso, mutual_info
     n_features_to_select: Optional[int] = None
     
+    # Manual feature selection (NEW)
+    selected_features: Optional[List[str]] = None  # Explicit list of features to use
+    
     # Outlier handling
     outlier_method: str = "none"  # none, zscore, iqr, isolation_forest
     outlier_threshold: float = 3.0
@@ -188,6 +191,7 @@ class PreprocessingConfig:
             "stratify": self.stratify,
             "feature_selection_method": self.feature_selection_method,
             "n_features_to_select": self.n_features_to_select,
+            "selected_features": self.selected_features,
             "outlier_method": self.outlier_method,
             "outlier_threshold": self.outlier_threshold,
             "min_samples_per_class": self.min_samples_per_class,
@@ -538,12 +542,44 @@ class DataPreprocessor:
         
         return X_train, X_test, y_train, y_test
     
+    def apply_manual_feature_selection(self, df: pd.DataFrame, target_col: str) -> pd.DataFrame:
+        """Apply manual feature selection if specified in config"""
+        if not self.config.selected_features:
+            self.log("No manual feature selection specified, using all features")
+            return df
+        
+        self.log(f"Applying manual feature selection: {len(self.config.selected_features)} features selected")
+        
+        # Ensure target column is included
+        selected_features = list(self.config.selected_features)
+        if target_col not in selected_features:
+            selected_features.append(target_col)
+        
+        # Check which features exist in the dataframe
+        available_features = df.columns.tolist()
+        valid_features = [col for col in selected_features if col in available_features]
+        missing_features = [col for col in selected_features if col not in available_features]
+        
+        if missing_features:
+            self.log(f"Warning: Selected features not found in dataset: {missing_features}", "warning")
+        
+        if not valid_features or (len(valid_features) == 1 and valid_features[0] == target_col):
+            raise ValueError(f"No valid features selected. Available features: {available_features}")
+        
+        # Filter dataframe to only include selected features
+        df_filtered = df[valid_features].copy()
+        
+        self.log(f"Manual feature selection applied: {len(valid_features)} features retained")
+        self.log(f"Selected features: {[col for col in valid_features if col != target_col]}")
+        
+        return df_filtered
+    
     def preprocess_data(self, df: pd.DataFrame, target_col: str, 
                        problem_type: ProblemTypeEnum) -> PreprocessingResult:
         """Main preprocessing pipeline"""
         self.log("Starting data preprocessing pipeline")
         
-        # Analyze data quality
+        # Analyze original data quality
         self.preprocessing_summary = self.analyze_data_quality(df, target_col)
         self.log(f"Data analysis: {self.preprocessing_summary['total_rows']} rows, "
                 f"{self.preprocessing_summary['total_columns']} columns")
@@ -553,8 +589,11 @@ class DataPreprocessor:
         if memory_mb > self.config.max_memory_mb:
             self.log(f"Warning: Dataset size ({memory_mb:.1f}MB) exceeds limit ({self.config.max_memory_mb}MB)")
         
+        # Step 0: Apply manual feature selection FIRST (if specified)
+        df_selected = self.apply_manual_feature_selection(df, target_col)
+        
         # Step 1: Handle missing values
-        df_cleaned = self.handle_missing_values(df, target_col)
+        df_cleaned = self.handle_missing_values(df_selected, target_col)
         
         # Step 2: Encode categorical variables
         df_encoded = self.encode_categorical_variables(df_cleaned, target_col, problem_type)
@@ -565,24 +604,32 @@ class DataPreprocessor:
         # Step 4: Scale features
         X_train_scaled, X_test_scaled = self.scale_features(X_train, X_test)
         
-        # Step 5: Feature selection (optional)
-        X_train_final, X_test_final = self.select_features(X_train_scaled, X_test_scaled, y_train, problem_type)
+        # Step 5: Automatic feature selection (optional, only if no manual selection was done)
+        if not self.config.selected_features and self.config.feature_selection_method:
+            X_train_final, X_test_final = self.select_features(X_train_scaled, X_test_scaled, y_train, problem_type)
+        else:
+            X_train_final, X_test_final = X_train_scaled, X_test_scaled
+            if self.config.selected_features:
+                self.log("Skipping automatic feature selection because manual selection was applied")
         
         # Store final feature names
         self.feature_names = X_train_final.columns.tolist()
         
         # Create preprocessing summary
         preprocessing_steps = []
+        if self.config.selected_features:
+            preprocessing_steps.append(f"manual_feature_selection_{len(self.config.selected_features)}_features")
         if self.config.missing_strategy != "none":
             preprocessing_steps.append(f"missing_values_{self.config.missing_strategy}")
         if self.config.categorical_strategy != "none":
             preprocessing_steps.append(f"categorical_{self.config.categorical_strategy}")
         if self.config.scaling_strategy != "none":
             preprocessing_steps.append(f"scaling_{self.config.scaling_strategy}")
-        if self.config.feature_selection_method:
+        if not self.config.selected_features and self.config.feature_selection_method:
             preprocessing_steps.append(f"feature_selection_{self.config.feature_selection_method}")
         
         self.log(f"Preprocessing completed: {len(preprocessing_steps)} steps applied")
+        self.log(f"Final feature set: {len(self.feature_names)} features")
         
         return PreprocessingResult(
             X_train=X_train_final,
@@ -632,11 +679,23 @@ def load_and_validate_data(file_path: str, target_column: str) -> pd.DataFrame:
         raise
 
 
+def generate_unique_random_state(pipeline_run_id: str, component: str = "preprocessing") -> int:
+    """Generate a unique but deterministic random state based on pipeline run ID"""
+    import hashlib
+    
+    # Create deterministic but unique random seed from pipeline run ID
+    hash_input = f"{pipeline_run_id}_{component}"
+    hash_object = hashlib.md5(hash_input.encode())
+    unique_seed = int(hash_object.hexdigest()[:8], 16) % (2**31 - 1)  # Ensure it's a valid int32
+    return unique_seed
+
+
 @task(name="create_preprocessing_config")
 def create_preprocessing_config(
     algorithm_names: List[str],
     problem_type: str,
-    custom_config: Optional[Dict[str, Any]] = None
+    custom_config: Optional[Dict[str, Any]] = None,
+    pipeline_run_id: Optional[str] = None
 ) -> PreprocessingConfig:
     """Create preprocessing configuration based on algorithm recommendations"""
     logger = get_run_logger()
@@ -659,8 +718,9 @@ def create_preprocessing_config(
     
     logger.info(f"Recommended preprocessing steps: {list(recommended_steps)}")
     
-    # Create default config
-    config = PreprocessingConfig()
+    # Create default config with unique random state
+    unique_random_state = generate_unique_random_state(pipeline_run_id) if pipeline_run_id else 42
+    config = PreprocessingConfig(random_state=unique_random_state)
     
     # Apply algorithm-specific recommendations
     if "scale_features" in recommended_steps:
@@ -680,7 +740,18 @@ def create_preprocessing_config(
             if hasattr(config, key):
                 setattr(config, key, value)
                 logger.info(f"Applied custom config: {key} = {value}")
+            elif key in ["feature_columns", "features"]:
+                # Handle user's explicit feature selection
+                config.selected_features = value
+                logger.info(f"Applied manual feature selection: {len(value)} features = {value}")
     
+    # Log final configuration
+    if config.selected_features:
+        logger.info(f"Manual feature selection enabled: {config.selected_features}")
+    else:
+        logger.info("No manual feature selection, will use all available features")
+    
+    logger.info(f"Using random_state: {config.random_state} for pipeline {pipeline_run_id}")
     return config
 
 
@@ -783,7 +854,8 @@ def data_preprocessing_flow(
     target_column: str,
     problem_type: str,
     algorithm_names: List[str],
-    custom_config: Optional[Dict[str, Any]] = None
+    custom_config: Optional[Dict[str, Any]] = None,
+    pipeline_run_id: Optional[str] = None
 ) -> Dict[str, Any]:
     """
     Complete data preprocessing flow for ML training
@@ -794,19 +866,20 @@ def data_preprocessing_flow(
         problem_type: 'classification' or 'regression'
         algorithm_names: List of algorithm names to optimize preprocessing for
         custom_config: Optional custom preprocessing configuration
+        pipeline_run_id: Unique pipeline run ID for generating unique random seeds
     
     Returns:
         Dictionary containing preprocessing results and validation
     """
     logger = get_run_logger()
-    logger.info(f"Starting preprocessing flow for {problem_type} problem")
+    logger.info(f"Starting preprocessing flow for {problem_type} problem (run: {pipeline_run_id})")
     
     try:
         # Step 1: Load and validate data
         df = load_and_validate_data(file_path, target_column)
         
-        # Step 2: Create preprocessing configuration
-        config = create_preprocessing_config(algorithm_names, problem_type, custom_config)
+        # Step 2: Create preprocessing configuration with unique random state
+        config = create_preprocessing_config(algorithm_names, problem_type, custom_config, pipeline_run_id)
         
         # Step 3: Execute preprocessing
         result = preprocess_dataset(df, target_column, problem_type, config)

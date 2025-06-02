@@ -68,7 +68,7 @@ const FeatureSelection = ({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium text-gray-900">
+        <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">
           Feature Selection ({selectedFeatures.length} of {availableFeatures.length} selected)
         </h3>
         <div className="flex space-x-2">
@@ -428,12 +428,28 @@ const DatasetConfigPage = () => {
         console.log('General pipeline triggered successfully:', result);
       }
       
+      // Add detailed logging for navigation
+      console.log('Pipeline result:', result);
+      
+      if (!result) {
+        throw new Error('No result returned from pipeline');
+      }
+      
+      if (!result.run_uuid) {
+        console.error('No run_uuid in result:', result);
+        throw new Error('Pipeline started but no run ID returned');
+      }
+      
+      const navigationUrl = `/pipeline-results/${result.run_uuid}`;
+      console.log('Navigating to:', navigationUrl);
+      
       // Navigate to results page
-      navigate(`/pipeline/${result.run_uuid}`);
+      navigate(navigationUrl);
       
     } catch (err) {
       console.error('Error starting ML training:', err);
-      setError('Failed to start ML training');
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+      setError(`Failed to start ML training: ${errorMessage}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -495,7 +511,7 @@ const DatasetConfigPage = () => {
               Back
             </Button>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Dataset Configuration</h1>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Dataset Configuration</h1>
               {file && (
                 <p className="text-gray-300">{file.filename}</p>
               )}
@@ -532,15 +548,15 @@ const DatasetConfigPage = () => {
                 <div className="flex items-center space-x-6 text-sm">
                   <div className="flex items-center">
                     <Target className="h-4 w-4 text-blue-600 mr-2" />
-                    <span className="text-gray-700">Target:</span>
-                    <span className="font-medium text-blue-900 ml-1">
+                    <span className="text-gray-700 dark:text-gray-300">Target:</span>
+                    <span className="font-medium text-blue-900 dark:text-blue-300 ml-1">
                       {targetColumn || 'Not selected'}
                     </span>
                   </div>
                   <div className="flex items-center">
-                    <span className="text-gray-700">Type:</span>
+                    <span className="text-gray-700 dark:text-gray-300">Type:</span>
                     <span className={`font-medium ml-1 ${
-                      problemType === 'CLASSIFICATION' ? 'text-purple-700' : 'text-green-700'
+                      problemType === 'CLASSIFICATION' ? 'text-purple-700 dark:text-purple-300' : 'text-green-700 dark:text-green-300'
                     }`}>
                       {problemType}
                       {autoDetectedType && autoDetectedType === problemType && (
@@ -549,8 +565,8 @@ const DatasetConfigPage = () => {
                     </span>
                   </div>
                   <div className="flex items-center">
-                    <span className="text-gray-700">Features:</span>
-                    <span className="font-medium text-gray-900 ml-1">
+                    <span className="text-gray-700 dark:text-gray-300">Features:</span>
+                    <span className="font-medium text-gray-900 dark:text-gray-100 ml-1">
                       {selectedFeatures.length} selected
                     </span>
                   </div>
@@ -587,7 +603,10 @@ const DatasetConfigPage = () => {
           )}
         </AnimatePresence>
 
-                {/* Main Content */}        <Tabs           tabs={[            {              id: 'profile',              label: (                <div className="flex items-center">                  <BarChart3 className="h-4 w-4 mr-2" />                  Data Profile                </div>              ),              content: profile ? (                <DataProfileSummary                  profile={profile}                  isLoading={false}                  error={null}                />              ) : null            },            {              id: 'preview',              label: (                <div className="flex items-center">                  <Database className="h-4 w-4 mr-2" />                  Data Preview                </div>              ),              content: (                <DatasetPreview                  data={previewData}                  columns={profile?.columns}                  isLoading={false}                  error={null}                  maxRows={20}                  maxCols={10}                  showStatistics={true}                />              )            },            {              id: 'config',              label: (                <div className="flex items-center">                  <Settings className="h-4 w-4 mr-2" />                  Configuration                </div>              ),              content: profile ? (                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">                  {/* Target Variable Selection */}                  <Card>                    <CardHeader>                      <CardTitle className="flex items-center">                        <Target className="h-5 w-5 mr-2 text-purple-600" />                        Target Variable                      </CardTitle>                    </CardHeader>                    <CardContent>                      <div className="space-y-4">                        <div>                          <label className="block text-sm font-medium text-gray-700 mb-2">                            Select the column you want to predict:                          </label>                          <select
+                {/* Main Content */}        <Tabs           tabs={[            {              id: 'profile',              label: (                <div className="flex items-center">                  <BarChart3 className="h-4 w-4 mr-2" />                  Data Profile                </div>              ),              content: profile ? (                <DataProfileSummary                  profile={profile}                  isLoading={false}                  error={null}                />              ) : null            },            {              id: 'preview',              label: (                <div className="flex items-center">                  <Database className="h-4 w-4 mr-2" />                  Data Preview                </div>              ),              content: (                <DatasetPreview                  data={previewData}                  columns={profile?.columns}                  isLoading={false}                  error={null}                  maxRows={20}                  maxCols={10}                  showStatistics={true}                />              )            },            {              id: 'config',              label: (                <div className="flex items-center">                  <Settings className="h-4 w-4 mr-2" />                  Configuration                </div>              ),              content: profile ? (                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">                  {/* Target Variable Selection */}                  <Card>                    <CardHeader>                      <CardTitle className="flex items-center">                        <Target className="h-5 w-5 mr-2 text-purple-600" />                        Target Variable                      </CardTitle>                    </CardHeader>                    <CardContent>                      <div className="space-y-4">                        <div>                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Select the column you want to predict:
+                          </label>
+                          <select
                             value={targetColumn}
                             onChange={(e) => {
                               setTargetColumn(e.target.value);
@@ -606,7 +625,10 @@ const DatasetConfigPage = () => {
                                 {column.name} ({column.data_type}, {column.unique_count} unique)
                               </option>
                             )) || []}
-                          </select>                        </div>                        {targetColumn && (                          <div className="space-y-3">                            <div>                              <label className="block text-sm font-medium text-gray-700 mb-2">                                Problem Type:                              </label>                              <div className="flex space-x-4">                                <label className="flex items-center">                                  <input                                    type="radio"                                    value="CLASSIFICATION"                                    checked={problemType === 'CLASSIFICATION'}                                    onChange={(e) => setProblemType(e.target.value as 'CLASSIFICATION')}                                    className="mr-2"                                  />                                  Classification                                </label>                                <label className="flex items-center">                                  <input                                    type="radio"                                    value="REGRESSION"                                    checked={problemType === 'REGRESSION'}                                    onChange={(e) => setProblemType(e.target.value as 'REGRESSION')}                                    className="mr-2"                                  />                                  Regression                                </label>                              </div>                            </div>                            {autoDetectedType && (                              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">                                <div className="flex items-start">                                  <Info className="h-4 w-4 text-blue-600 mt-0.5 mr-2 flex-shrink-0" />                                  <div>                                    <p className="text-sm font-medium text-blue-800">                                      Auto-detected: {autoDetectedType}                                    </p>                                    <p className="text-xs text-blue-700 mt-1">                                      Based on the target column characteristics. You can change this if needed.                                    </p>                                  </div>                                </div>                              </div>                            )}                          </div>                        )}                      </div>                    </CardContent>                  </Card>                  {/* Feature Selection */}                  <Card>                    <CardHeader>                      <CardTitle className="flex items-center">                        <Settings className="h-5 w-5 mr-2 text-green-600" />                        Feature Selection                      </CardTitle>                    </CardHeader>                    <CardContent>                      {targetColumn ? (                        <FeatureSelection                          columns={profile?.columns?.map(col => col.name) || []}                          selectedFeatures={selectedFeatures}                          targetColumn={targetColumn}                          onFeaturesChange={setSelectedFeatures}                          recommendations={getFeatureRecommendations()}                        />                      ) : (                        <div className="text-center py-8 text-gray-500">                          Please select a target column first                        </div>                      )}                    </CardContent>                  </Card>                </div>              ) : null            }          ]}          defaultTabId={activeTab}          onChange={setActiveTab}        />
+                          </select>                        </div>                        {targetColumn && (                          <div className="space-y-3">                            <div>                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Problem Type:
+                              </label>
+                              <div className="flex space-x-4">                                <label className="flex items-center">                                  <input                                    type="radio"                                    value="CLASSIFICATION"                                    checked={problemType === 'CLASSIFICATION'}                                    onChange={(e) => setProblemType(e.target.value as 'CLASSIFICATION')}                                    className="mr-2"                                  />                                  Classification                                </label>                                <label className="flex items-center">                                  <input                                    type="radio"                                    value="REGRESSION"                                    checked={problemType === 'REGRESSION'}                                    onChange={(e) => setProblemType(e.target.value as 'REGRESSION')}                                    className="mr-2"                                  />                                  Regression                                </label>                              </div>                            </div>                            {autoDetectedType && (                              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">                                <div className="flex items-start">                                  <Info className="h-4 w-4 text-blue-600 mt-0.5 mr-2 flex-shrink-0" />                                  <div>                                    <p className="text-sm font-medium text-blue-800">                                      Auto-detected: {autoDetectedType}                                    </p>                                    <p className="text-xs text-blue-700 mt-1">                                      Based on the target column characteristics. You can change this if needed.                                    </p>                                  </div>                                </div>                              </div>                            )}                          </div>                        )}                      </div>                    </CardContent>                  </Card>                  {/* Feature Selection */}                  <Card>                    <CardHeader>                      <CardTitle className="flex items-center">                        <Settings className="h-5 w-5 mr-2 text-green-600" />                        Feature Selection                      </CardTitle>                    </CardHeader>                    <CardContent>                      {targetColumn ? (                        <FeatureSelection                          columns={profile?.columns?.map(col => col.name) || []}                          selectedFeatures={selectedFeatures}                          targetColumn={targetColumn}                          onFeaturesChange={setSelectedFeatures}                          recommendations={getFeatureRecommendations()}                        />                      ) : (                        <div className="text-center py-8 text-gray-500">                          Please select a target column first                        </div>                      )}                    </CardContent>                  </Card>                </div>              ) : null            }          ]}          defaultTabId={activeTab}          onChange={setActiveTab}        />
       </div>
     </PageLayout>
   );

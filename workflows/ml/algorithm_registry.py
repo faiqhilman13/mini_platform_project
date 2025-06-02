@@ -637,7 +637,8 @@ class AlgorithmRegistry:
     
     def create_algorithm_config(self, 
                               algorithm_name: AlgorithmNameEnum, 
-                              hyperparameters: Optional[Dict[str, Any]] = None) -> AlgorithmConfig:
+                              hyperparameters: Optional[Dict[str, Any]] = None,
+                              pipeline_run_id: Optional[str] = None) -> AlgorithmConfig:
         """Create an AlgorithmConfig with default or provided hyperparameters"""
         algo_def = self.get_algorithm(algorithm_name)
         if not algo_def:
@@ -648,6 +649,14 @@ class AlgorithmRegistry:
             param.name: param.default 
             for param in algo_def.hyperparameters
         }
+        
+        # Generate unique random state based on pipeline run ID to ensure different results per run
+        if pipeline_run_id and 'random_state' in default_hyperparams:
+            import hashlib
+            # Create deterministic but unique random seed from pipeline run ID
+            hash_object = hashlib.md5(f"{pipeline_run_id}_{algorithm_name.value}".encode())
+            unique_seed = int(hash_object.hexdigest()[:8], 16) % (2**31 - 1)  # Ensure it's a valid int32
+            default_hyperparams['random_state'] = unique_seed
         
         # Override with provided hyperparameters
         if hyperparameters:
@@ -772,13 +781,13 @@ def get_supported_algorithms(problem_type: Optional[ProblemTypeEnum] = None) -> 
     ]
 
 
-def create_default_algorithm_configs(problem_type: ProblemTypeEnum) -> List[AlgorithmConfig]:
+def create_default_algorithm_configs(problem_type: ProblemTypeEnum, pipeline_run_id: Optional[str] = None) -> List[AlgorithmConfig]:
     """Create default algorithm configurations for a problem type"""
     registry = get_algorithm_registry()
     default_algos = registry.get_default_algorithms(problem_type)
     
     return [
-        registry.create_algorithm_config(algo_name)
+        registry.create_algorithm_config(algo_name, pipeline_run_id=pipeline_run_id)
         for algo_name in default_algos
     ]
 

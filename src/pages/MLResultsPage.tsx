@@ -199,13 +199,33 @@ const MLResultsPage = () => {
     setError(null);
     
     try {
-      const [pipelineData, modelsData] = await Promise.all([
+      const [pipelineData, modelsResponse] = await Promise.all([
         getMLPipelineStatus(runId),
         getMLModels(runId)
       ]);
       
       setPipelineRun(pipelineData);
-      setModels(modelsData);
+      
+      // Handle the new error response format from backend
+      if (modelsResponse && typeof modelsResponse === 'object' && 'error' in modelsResponse && !Array.isArray(modelsResponse)) {
+        // Backend returned an error object instead of throwing
+        const errorResponse = modelsResponse as { error: string; models?: MLModel[] };
+        console.warn('Models response contains error:', errorResponse.error);
+        setModels(errorResponse.models || []);
+        
+        // If there are no models, show a more specific error
+        if (!errorResponse.models || errorResponse.models.length === 0) {
+          setError(`No trained models found: ${errorResponse.error}`);
+        }
+      } else if (Array.isArray(modelsResponse)) {
+        // Normal array of models
+        setModels(modelsResponse);
+      } else {
+        // Unexpected response format
+        console.error('Unexpected models response format:', modelsResponse);
+        setModels([]);
+        setError('Unexpected response format from server');
+      }
     } catch (err) {
       setError('Failed to load results. Please try again.');
       console.error('Error loading results:', err);

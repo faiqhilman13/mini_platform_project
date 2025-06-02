@@ -328,8 +328,8 @@ const DatasetPreview = ({
 
         {/* Data Table */}
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead className="bg-gray-50 dark:bg-gray-700">
               <tr>
                 {displayColumns.map((column, idx) => {
                   const analysis = columnAnalysis[column];
@@ -338,7 +338,7 @@ const DatasetPreview = ({
                   return (
                     <th
                       key={idx}
-                      className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
                     >
                       <div className="flex flex-col">
                         <div className="flex items-center space-x-2">
@@ -353,7 +353,7 @@ const DatasetPreview = ({
                         {/* Missing value indicator */}
                         {stats && stats.missing > 0 && (
                           <div className="mt-1">
-                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-red-100 text-red-700">
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-red-100 dark:bg-red-800 text-red-700 dark:text-red-200">
                               {stats.missing} missing
                             </span>
                           </div>
@@ -362,7 +362,7 @@ const DatasetPreview = ({
                         {/* Data type indicator */}
                         {analysis && (
                           <div className="mt-1">
-                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-gray-100 text-gray-300 capitalize">
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-200 capitalize">
                               {analysis.type}
                             </span>
                           </div>
@@ -372,15 +372,15 @@ const DatasetPreview = ({
                   );
                 })}
                 {hasMoreColumns && (
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300">
                     +{allColumns.length - maxCols} more columns
                   </th>
                 )}
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {displayRows.map((row, rowIdx) => (
-                <tr key={rowIdx} className={rowIdx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                <tr key={rowIdx} className={rowIdx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-750'}>
                   {displayColumns.map((column, colIdx) => {
                     const value = row[column];
                     const analysis = columnAnalysis[column];
@@ -394,11 +394,11 @@ const DatasetPreview = ({
                           analysis?.type === 'integer' || analysis?.type === 'float' 
                             ? 'text-right' 
                             : 'text-left',
-                          isNull ? 'text-gray-400 italic' : 'text-gray-900'
+                          isNull ? 'text-gray-400 dark:text-gray-500 italic' : 'text-gray-900 dark:text-white'
                         )}
                       >
                         {isNull ? (
-                          <span className="bg-red-50 text-red-600 px-2 py-1 rounded text-xs">
+                          <span className="bg-red-50 dark:bg-red-900 text-red-600 dark:text-red-300 px-2 py-1 rounded text-xs">
                             null
                           </span>
                         ) : (
@@ -416,7 +416,7 @@ const DatasetPreview = ({
                     );
                   })}
                   {hasMoreColumns && (
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-400">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-400 dark:text-gray-500">
                       ...
                     </td>
                   )}
@@ -426,10 +426,10 @@ const DatasetPreview = ({
           </table>
           
           {hasMoreRows && (
-            <div className="py-3 px-4 text-sm text-gray-500 border-t bg-gray-50">
+            <div className="py-3 px-4 text-sm text-gray-500 dark:text-gray-300 border-t bg-gray-50 dark:bg-gray-700">
               <div className="flex items-center justify-between">
                 <span>Showing {maxRows} of {data.length} rows</span>
-                <span className="text-xs text-gray-400">
+                <span className="text-xs text-gray-400 dark:text-gray-500">
                   Scroll horizontally to see more columns
                 </span>
               </div>

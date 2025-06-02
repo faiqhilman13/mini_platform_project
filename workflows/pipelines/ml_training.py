@@ -241,25 +241,38 @@ class MLModelTrainer:
             print(f"[{level.upper()}] {message}")
     
     def get_algorithm_hyperparameters(self, algorithm_name: AlgorithmNameEnum, 
-                                    custom_params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+                                    custom_params: Optional[Dict[str, Any]] = None,
+                                    pipeline_run_id: Optional[str] = None) -> Dict[str, Any]:
         """Get hyperparameters for an algorithm with custom overrides"""
-        algorithm_def = self.algorithm_registry.get_algorithm(algorithm_name)
-        
-        if not algorithm_def:
-            self.log(f"Algorithm {algorithm_name.value} not found in registry", "warning")
-            return {}
-        
-        # Start with default hyperparameters
-        hyperparams = {
-            param.name: param.default for param in algorithm_def.hyperparameters
-        }
-        
-        # Apply custom parameters
-        if custom_params:
-            hyperparams.update(custom_params)
-            self.log(f"Applied custom hyperparameters for {algorithm_name.value}: {custom_params}")
-        
-        return hyperparams
+        # Use the algorithm registry to get hyperparameters with unique random seeds
+        try:
+            algo_config = self.algorithm_registry.create_algorithm_config(
+                algorithm_name, 
+                custom_params, 
+                pipeline_run_id
+            )
+            return algo_config.hyperparameters
+        except Exception as e:
+            self.log(f"Error creating algorithm config for {algorithm_name.value}: {e}", "warning")
+            
+            # Fallback to original method if registry fails
+            algorithm_def = self.algorithm_registry.get_algorithm(algorithm_name)
+            
+            if not algorithm_def:
+                self.log(f"Algorithm {algorithm_name.value} not found in registry", "warning")
+                return {}
+            
+            # Start with default hyperparameters
+            hyperparams = {
+                param.name: param.default for param in algorithm_def.hyperparameters
+            }
+            
+            # Apply custom parameters
+            if custom_params:
+                hyperparams.update(custom_params)
+                self.log(f"Applied custom hyperparameters for {algorithm_name.value}: {custom_params}")
+            
+            return hyperparams
     
     def train_single_algorithm(self, algorithm_name: AlgorithmNameEnum, 
                              X_train: pd.DataFrame, y_train: pd.Series,
@@ -594,7 +607,7 @@ def train_multiple_algorithms(
             custom_params = algo_config.get("hyperparameters", {})
             
             # Get hyperparameters
-            hyperparams = trainer.get_algorithm_hyperparameters(algorithm_name, custom_params)
+            hyperparams = trainer.get_algorithm_hyperparameters(algorithm_name, custom_params, pipeline_run_id)
             
             # Train algorithm
             result = trainer.train_single_algorithm(
@@ -795,7 +808,8 @@ def ml_training_flow(config: Dict[str, Any]) -> Dict[str, Any]:
             target_column=validated_config["target_column"],
             problem_type=validated_config["problem_type"],
             algorithm_names=algorithm_names,
-            custom_config=preprocessing_config
+            custom_config=preprocessing_config,
+            pipeline_run_id=validated_config["pipeline_run_id"]
         )
         
         if not preprocessing_flow_result["success"]:

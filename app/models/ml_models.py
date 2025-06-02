@@ -252,6 +252,7 @@ class MLResult(SQLModel):
 class MLPipelineRun(SQLModel, table=True):
     """ML-specific pipeline run tracking"""
     __tablename__ = "ml_pipeline_run"
+    __table_args__ = {'extend_existing': True}
     
     # Primary key and basic info
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -295,14 +296,12 @@ class MLPipelineRun(SQLModel, table=True):
     # Timestamps
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
-    
-    # Relationships
-    models: List["MLModel"] = Relationship(back_populates="pipeline_run")
 
 
 class MLModel(SQLModel, table=True):
     """Individual ML model within a pipeline run"""
     __tablename__ = "ml_model"
+    __table_args__ = {'extend_existing': True}
     
     # Primary identification
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -339,14 +338,17 @@ class MLModel(SQLModel, table=True):
     # Timestamps
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
-    
-    # Relationships
-    pipeline_run: Optional[MLPipelineRun] = Relationship(back_populates="models")
+
+
+# Define relationships after both classes are defined to avoid forward reference issues
+MLPipelineRun.models = Relationship(back_populates="pipeline_run")
+MLModel.pipeline_run = Relationship(back_populates="models")
 
 
 class MLExperiment(SQLModel, table=True):
     """Group related ML pipeline runs for comparison"""
     __tablename__ = "ml_experiment"
+    __table_args__ = {'extend_existing': True}
     
     id: Optional[int] = Field(default=None, primary_key=True)
     experiment_id: str = Field(unique=True, index=True, default_factory=lambda: str(uuid.uuid4()))

@@ -84,7 +84,7 @@ const CardContent = ({ className, children }: CardContentProps) => {
   return (
     <div
       className={cn(
-        'px-5 py-4 text-gray-800 dark:text-gray-200',
+        'px-5 py-4 text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800',
         className
       )}
     >

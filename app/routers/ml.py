@@ -5,11 +5,13 @@ import logging
 import uuid
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Body
-from sqlmodel import Session
+from sqlmodel import Session, select
+import sqlalchemy
 
 from app.core.config import settings
 from app.db.session import get_session
-from app.models.pipeline_models import PipelineType, PipelineRunStatusResponse
+from app.models.pipeline_models import PipelineType, PipelineRunStatusResponse, PipelineRun
+from app.models.ml_models import MLPipelineRun, MLModel
 from app.services.pipeline_service import trigger_pipeline_flow, get_pipeline_run_status
 
 logger = logging.getLogger(__name__)
@@ -123,51 +125,84 @@ def get_ml_pipeline_status_endpoint(
 
 @router.get("/models/{run_uuid}")
 def get_ml_models(
-    run_uuid: uuid.UUID,
+    run_uuid: str,  # Change to string to avoid UUID conversion issues
     db: Session = Depends(get_session)
 ):
     """
     Get all trained models for a specific ML pipeline run.
     
-    Returns metrics and details for all models trained during the pipeline execution.
+    Returns metrics and details for all models trained during the pipeline extensions.
     """
     logger.info(f"Getting models for ML pipeline run UUID: {run_uuid}")
     
     try:
-        status = get_pipeline_run_status(db, run_uuid)
-        if not status:
-            raise HTTPException(status_code=404, detail="ML pipeline run not found")
+        # Normalize UUID formats to handle both with and without hyphens
+        run_uuid_str = str(run_uuid)
+        run_uuid_no_hyphens = run_uuid_str.replace('-', '')
+        
+        # Use SQLModel select with text comparison to find matching pipeline
+        pipeline_runs = db.exec(select(PipelineRun)).all()
+        
+        # Find the matching pipeline run by comparing string representations
+        pipeline_run = None
+        for run in pipeline_runs:
+            run_uuid_db = str(run.run_uuid).replace('-', '')
+            if run_uuid_db == run_uuid_no_hyphens or str(run.run_uuid) == run_uuid_str:
+                pipeline_run = run
+                break
+        
+        if not pipeline_run:
+            logger.warning(f"Pipeline run {run_uuid} not found in pipeline_run table")
+            return {"error": f"Pipeline run {run_uuid} not found", "models": []}
+        
+        # Check if it's an ML training pipeline
+        if pipeline_run.pipeline_type != PipelineType.ML_TRAINING:
+            logger.warning(f"Pipeline run {run_uuid} is not an ML training pipeline")
+            return {"error": f"Pipeline run {run_uuid} is not an ML training pipeline", "models": []}
         
         # Extract models from the result
         models = []
-        if status.result and status.result.get("success"):
-            ml_result = status.result.get("result", {})
-            evaluation_results = ml_result.get("evaluation_results", [])
-            training_results = ml_result.get("training_results", [])
-            
-            # Create lookups for training data
-            training_times = {}
-            hyperparameters_lookup = {}
-            for training_result in training_results:
-                algorithm_name = training_result.get("algorithm_name")
-                training_times[algorithm_name] = training_result.get("training_time", 0)
-                # Extract hyperparameters from training_result
-                hyperparameters_lookup[algorithm_name] = training_result.get("hyperparameters", {})
-            
-            for idx, eval_result in enumerate(evaluation_results):
-                if not eval_result.get("error"):
-                    algorithm_name = eval_result.get("algorithm_name", "unknown")
-                    model_data = {
-                        "model_id": f"{run_uuid}_{idx}",
-                        "pipeline_run_id": str(run_uuid),
-                        "algorithm_name": algorithm_name,
-                        "hyperparameters": hyperparameters_lookup.get(algorithm_name, {}),
-                        "performance_metrics": eval_result.get("metrics", {}),
-                        "model_path": "",  # Could extract from training_results if needed
-                        "feature_importance": eval_result.get("feature_importance"),
-                        "training_time": training_times.get(algorithm_name, 0)
-                    }
-                    models.append(model_data)
+        if pipeline_run.result:
+            import json
+            try:
+                result_data = pipeline_run.result if isinstance(pipeline_run.result, dict) else json.loads(str(pipeline_run.result))
+                
+                if result_data and result_data.get("success"):
+                    ml_result = result_data.get("result", {})
+                    evaluation_results = ml_result.get("evaluation_results", [])
+                    training_results = ml_result.get("training_results", [])
+                    
+                    # Create lookups for training data
+                    training_times = {}
+                    hyperparameters_lookup = {}
+                    for training_result in training_results:
+                        algorithm_name = training_result.get("algorithm_name")
+                        training_times[algorithm_name] = training_result.get("training_time", 0)
+                        hyperparameters_lookup[algorithm_name] = training_result.get("hyperparameters", {})
+                    
+                    for idx, eval_result in enumerate(evaluation_results):
+                        if not eval_result.get("error"):
+                            algorithm_name = eval_result.get("algorithm_name", "unknown")
+                            # Create a stable model ID based on pipeline run UUID and algorithm
+                            # Use the actual pipeline run UUID from database to ensure uniqueness per training run
+                            stable_model_id = f"{pipeline_run.run_uuid}_{algorithm_name}_{idx}"
+                            model_data = {
+                                "model_id": stable_model_id,
+                                "pipeline_run_id": run_uuid_str,
+                                "algorithm_name": algorithm_name,
+                                "hyperparameters": hyperparameters_lookup.get(algorithm_name, {}),
+                                "performance_metrics": eval_result.get("metrics", {}),
+                                "model_path": "",
+                                "feature_importance": eval_result.get("feature_importance"),
+                                "training_time": training_times.get(algorithm_name, 0)
+                            }
+                            models.append(model_data)
+            except (json.JSONDecodeError, AttributeError) as e:
+                logger.error(f"Error parsing result data: {e}")
+                return {"error": f"Error parsing pipeline results", "models": []}
+        
+        if not models:
+            return {"error": f"No models found for pipeline run {run_uuid}", "models": []}
         
         return models
         
@@ -175,7 +210,7 @@ def get_ml_models(
         raise
     except Exception as e:
         logger.exception(f"Error getting ML models for {run_uuid}")
-        raise HTTPException(status_code=500, detail=f"Failed to get ML models: {str(e)}")
+        return {"error": f"Failed to get ML models: {str(e)}", "models": []}
 
 
 @algorithms_router.get("/suggestions")

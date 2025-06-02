@@ -1,5 +1,5 @@
-import React from 'react';
-import { FileText, Table, File, ArrowRight } from 'lucide-react';
+import React, { useState } from 'react';
+import { FileText, Table, File, ArrowRight, Trash2 } from 'lucide-react';
 import { formatBytes, formatDate, cn } from '../../utils/helpers';
 import { UploadedFile } from '../../types';
 import { FILE_TYPE_ICONS } from '../../utils/constants';
@@ -9,6 +9,7 @@ import Button from '../ui/Button';
 interface FileCardProps {
   file: UploadedFile;
   onClick?: (file: UploadedFile) => void;
+  onDelete?: (file: UploadedFile) => void;
   selected?: boolean;
   className?: string;
 }
@@ -16,9 +17,12 @@ interface FileCardProps {
 const FileCard = ({ 
   file, 
   onClick, 
+  onDelete,
   selected = false,
   className 
 }: FileCardProps) => {
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
   // Get the icon component based on file type
   const IconComponent = (() => {
     const iconName = FILE_TYPE_ICONS[file.file_type as keyof typeof FILE_TYPE_ICONS] || 'File';
@@ -33,6 +37,21 @@ const FileCard = ({
 
   const handleClick = () => {
     if (onClick) onClick(file);
+  };
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (showDeleteConfirm) {
+      if (onDelete) onDelete(file);
+      setShowDeleteConfirm(false);
+    } else {
+      setShowDeleteConfirm(true);
+    }
+  };
+
+  const handleCancelDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowDeleteConfirm(false);
   };
 
   return (
@@ -67,18 +86,51 @@ const FileCard = ({
             </div>
           </div>
           
-          <div className="ml-4">
-            <Button 
-              size="sm" 
-              variant="ghost"
-              className="text-gray-400 hover:text-gray-700"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleClick();
-              }}
-            >
-              <ArrowRight className="w-4 h-4" />
-            </Button>
+          <div className="ml-4 flex items-center space-x-2">
+            {showDeleteConfirm ? (
+              <>
+                <Button 
+                  size="sm" 
+                  variant="danger"
+                  className="text-xs"
+                  onClick={handleDelete}
+                >
+                  Confirm
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  className="text-xs"
+                  onClick={handleCancelDelete}
+                >
+                  Cancel
+                </Button>
+              </>
+            ) : (
+              <>
+                {onDelete && (
+                  <Button 
+                    size="sm" 
+                    variant="ghost"
+                    className="text-red-400 hover:text-red-600 hover:bg-red-50"
+                    onClick={handleDelete}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                )}
+                <Button 
+                  size="sm" 
+                  variant="ghost"
+                  className="text-gray-400 hover:text-gray-700"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleClick();
+                  }}
+                >
+                  <ArrowRight className="w-4 h-4" />
+                </Button>
+              </>
+            )}
           </div>
         </CardContent>
       </div>

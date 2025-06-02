@@ -16,7 +16,7 @@ import { motion } from 'framer-motion';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import FileCard from '../components/file/FileCard';
-import { getUploadedFiles } from '../services/api';
+import { getUploadedFiles, deleteFile } from '../services/api';
 import { UploadedFile } from '../types';
 import { cn } from '../utils/helpers';
 
@@ -29,6 +29,7 @@ const FilesListPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'documents' | 'datasets'>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [deletingFileId, setDeletingFileId] = useState<string | null>(null);
 
   const fetchFiles = useCallback(async () => {
     try {
@@ -77,6 +78,28 @@ const FilesListPage = () => {
   const handleStartMLWorkflow = (file: UploadedFile) => {
     if (['csv', 'xlsx'].includes(file.file_type)) {
       navigate(`/dataset/${file.id}/config`);
+    }
+  };
+
+  const handleDeleteFile = async (file: UploadedFile) => {
+    try {
+      setDeletingFileId(file.id);
+      setError(null);
+      
+      const result = await deleteFile(file.id);
+      
+      if (result.success) {
+        // Remove the file from local state
+        setFiles(prevFiles => prevFiles.filter(f => f.id !== file.id));
+        setFilteredFiles(prevFiles => prevFiles.filter(f => f.id !== file.id));
+      } else {
+        setError(`Failed to delete file: ${result.message}`);
+      }
+    } catch (err) {
+      setError('Failed to delete file. Please try again.');
+      console.error('Error deleting file:', err);
+    } finally {
+      setDeletingFileId(null);
     }
   };
 
@@ -287,6 +310,7 @@ const FilesListPage = () => {
                 <FileCard
                   file={file}
                   onClick={handleFileSelect}
+                  onDelete={handleDeleteFile}
                   className={viewMode === 'list' ? 'w-full' : ''}
                 />
                 {['csv', 'xlsx'].includes(file.file_type) && (
@@ -299,6 +323,7 @@ const FilesListPage = () => {
                         handleStartMLWorkflow(file);
                       }}
                       className="w-full text-xs"
+                      disabled={deletingFileId === file.id}
                     >
                       <Brain className="h-3 w-3 mr-1" />
                       Start ML Training

@@ -74,3 +74,23 @@ async def get_uploaded_files(
         return files
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error retrieving uploaded files: {str(e)}")
+
+@router.delete("/files/{file_id}")
+async def delete_uploaded_file(
+    file_id: int,
+    db: Session = Depends(get_session)
+):
+    """
+    Deletes an uploaded file and its associated data.
+    
+    This removes the file from the filesystem, database record, and any related pipeline runs.
+    """
+    try:
+        result = await file_service.delete_uploaded_file(file_id=file_id, db=db)
+        if not result["success"]:
+            raise HTTPException(status_code=404, detail=result["message"])
+        return {"message": result["message"], "success": True}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error deleting file: {str(e)}")

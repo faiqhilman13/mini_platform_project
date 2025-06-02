@@ -37,6 +37,11 @@ export const getUploadedFiles = async (): Promise<UploadedFile[]> => {
   return response.data;
 };
 
+export const deleteFile = async (fileId: string): Promise<{ message: string; success: boolean }> => {
+  const response = await api.delete(`/upload/files/${fileId}`);
+  return response.data;
+};
+
 // Pipeline API
 export const triggerPipeline = async (
   fileId: string, 

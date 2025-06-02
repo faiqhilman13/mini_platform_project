@@ -1,10 +1,11 @@
 from fastapi import UploadFile, Depends
 from sqlmodel import Session, select
 from app.models.file_models import FileUploadResponse, UploadedFileLog, UploadedFileLogCreate
+from app.models.pipeline_models import PipelineRun
 from app.db.session import get_session # Import get_session
 import os
 import pandas as pd  # DS1.1.1: Added for CSV/Excel validation
-from typing import List
+from typing import List, Dict
 
 # Define a directory to store uploads, ensure it exists
 UPLOAD_DIRECTORY = "./uploaded_files"
@@ -171,3 +172,62 @@ def _determine_file_type(content_type: str, filename: str) -> str:
         return "text"
     else:
         return "unknown" 
+
+async def delete_uploaded_file(file_id: int, db: Session) -> Dict[str, any]:
+    """
+    Deletes an uploaded file and its associated data.
+    
+    This function:
+    1. Removes the file from the filesystem
+    2. Deletes the database record
+    3. Deletes any related pipeline runs
+    
+    Args:
+        file_id: The ID of the file to delete
+        db: Database session
+        
+    Returns:
+        Dict with success status and message
+    """
+    try:
+        # Find the file record
+        query = select(UploadedFileLog).where(UploadedFileLog.id == file_id)
+        result = db.execute(query)
+        file_record = result.scalar_one_or_none()
+        
+        if not file_record:
+            return {"success": False, "message": f"File with ID {file_id} not found"}
+        
+        # Store filename for response message
+        filename = file_record.filename
+        file_path = file_record.storage_location
+        
+        # Delete related pipeline runs first (foreign key constraint)
+        pipeline_query = select(PipelineRun).where(PipelineRun.uploaded_file_log_id == file_id)
+        pipeline_result = db.execute(pipeline_query)
+        pipeline_runs = pipeline_result.scalars().all()
+        
+        for pipeline_run in pipeline_runs:
+            db.delete(pipeline_run)
+        
+        # Delete the file from filesystem
+        if file_path and os.path.exists(file_path):
+            try:
+                os.remove(file_path)
+            except OSError as e:
+                print(f"Warning: Could not delete file {file_path}: {e}")
+                # Continue with database deletion even if file removal fails
+        
+        # Delete the database record
+        db.delete(file_record)
+        db.commit()
+        
+        return {
+            "success": True, 
+            "message": f"File '{filename}' and {len(pipeline_runs)} related pipeline runs deleted successfully"
+        }
+        
+    except Exception as e:
+        db.rollback()
+        print(f"Error deleting file {file_id}: {e}")
+        return {"success": False, "message": f"Error deleting file: {str(e)}"} 

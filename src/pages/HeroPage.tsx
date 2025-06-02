@@ -125,14 +125,14 @@ const HeroPage = () => {
             <div className="flex flex-col sm:flex-row gap-4">
               <button
                 onClick={() => navigate('/upload')}
-                className="px-8 py-3 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full text-white font-medium hover:opacity-90 transition-opacity flex items-center justify-center"
+                className="px-8 py-3 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full text-white font-medium hover:opacity-90 transition-all duration-300 flex items-center justify-center shadow-2xl shadow-indigo-500/50 border border-indigo-400/50 backdrop-blur-sm hover:shadow-indigo-400/70 hover:scale-105"
               >
                 <Upload className="h-4 w-4 mr-2" />
                 Start Training
               </button>
               <button
                 onClick={() => navigate('/results')}
-                className="px-8 py-3 bg-transparent border border-white/20 rounded-full text-white font-medium hover:bg-white/10 transition-colors flex items-center justify-center"
+                className="px-8 py-3 bg-transparent border border-indigo-400/50 rounded-full text-white font-medium hover:bg-indigo-500/10 transition-all duration-300 flex items-center justify-center shadow-2xl shadow-indigo-500/50 backdrop-blur-sm hover:shadow-indigo-400/70 hover:scale-105"
               >
                 <BarChart3 className="h-4 w-4 mr-2" />
                 View Results
@@ -235,14 +235,14 @@ const HeroPage = () => {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
               onClick={() => navigate('/upload')}
-              className="px-10 py-4 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full text-white font-semibold hover:opacity-90 transition-opacity flex items-center justify-center text-lg"
+              className="px-10 py-4 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full text-white font-semibold hover:opacity-90 transition-all duration-300 flex items-center justify-center text-lg shadow-2xl shadow-indigo-500/50 border border-indigo-400/50 backdrop-blur-sm hover:shadow-indigo-400/70 hover:scale-105"
             >
               <Upload className="h-5 w-5 mr-2" />
               Get Started Free
             </button>
             <button
               onClick={() => navigate('/ml')}
-              className="px-10 py-4 bg-transparent border border-white/20 rounded-full text-white font-semibold hover:bg-white/10 transition-colors flex items-center justify-center text-lg"
+              className="px-10 py-4 bg-transparent border border-indigo-400/50 rounded-full text-white font-semibold hover:bg-indigo-500/10 transition-all duration-300 flex items-center justify-center text-lg shadow-2xl shadow-indigo-500/50 backdrop-blur-sm hover:shadow-indigo-400/70 hover:scale-105"
             >
               <Brain className="h-5 w-5 mr-2" />
               Explore Platform
