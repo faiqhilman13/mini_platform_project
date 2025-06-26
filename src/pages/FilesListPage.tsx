@@ -10,7 +10,8 @@ import {
   Database,
   Brain,
   RefreshCw,
-  AlertCircle
+  AlertCircle,
+  Bot
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
@@ -81,6 +82,11 @@ const FilesListPage = () => {
     }
   };
 
+  const handleInteractWithLLMs = (file: UploadedFile) => {
+    // Navigate to AI page with file context
+    navigate('/ai', { state: { selectedFile: file } });
+  };
+
   const handleDeleteFile = async (file: UploadedFile) => {
     try {
       setDeletingFileId(file.id);
@@ -110,6 +116,15 @@ const FilesListPage = () => {
       datasets: files.filter(f => ['csv', 'xlsx'].includes(f.file_type)).length,
     };
     return stats;
+  };
+
+  // Helper function to check if file is a document that can work with LLMs
+  const isDocumentFile = (fileType: string) => {
+    return ['pdf', 'text'].includes(fileType) || 
+           fileType === 'application/pdf' || 
+           fileType === 'text/plain' ||
+           fileType === 'application/msword' ||
+           fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
   };
 
   const stats = getFileTypeStats();
@@ -313,8 +328,11 @@ const FilesListPage = () => {
                   onDelete={handleDeleteFile}
                   className={viewMode === 'list' ? 'w-full' : ''}
                 />
-                {['csv', 'xlsx'].includes(file.file_type) && (
-                  <div className="mt-2">
+                
+                {/* Action Buttons for different file types */}
+                <div className="mt-2 space-y-2">
+                  {/* ML Training Button for Datasets */}
+                  {['csv', 'xlsx'].includes(file.file_type) && (
                     <Button
                       variant="outline"
                       size="sm"
@@ -328,8 +346,25 @@ const FilesListPage = () => {
                       <Brain className="h-3 w-3 mr-1" />
                       Start ML Training
                     </Button>
-                  </div>
-                )}
+                  )}
+                  
+                  {/* LLM Interaction Button for Documents */}
+                  {isDocumentFile(file.file_type) && (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleInteractWithLLMs(file);
+                      }}
+                      className="w-full text-xs"
+                      disabled={deletingFileId === file.id}
+                    >
+                      <Bot className="h-3 w-3 mr-1" />
+                      Interact with LLMs
+                    </Button>
+                  )}
+                </div>
               </motion.div>
             ))}
           </div>

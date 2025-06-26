@@ -127,38 +127,7 @@ const FeatureSelection = ({
         </div>
       </div>
 
-      {/* High Cardinality Warning */}
-      {selectedHighCardinalityFeatures.length > 0 && (
-        <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
-          <div className="flex items-start">
-            <AlertTriangle className="h-4 w-4 text-orange-600 mt-0.5 mr-2 flex-shrink-0" />
-            <div>
-              <p className="text-sm font-medium text-orange-800">High Cardinality Features Selected</p>
-              <p className="text-xs text-orange-700 mt-1">
-                The following features have many unique values and will be automatically transformed:
-              </p>
-              <ul className="text-xs text-orange-700 mt-2 space-y-1">
-                {selectedHighCardinalityFeatures.map(feature => {
-                  const uniqueCount = getFeatureUniqueCount(feature);
-                  return (
-                    <li key={feature} className="flex items-center">
-                      <span className="font-medium">{feature}</span>
-                      <span className="ml-2 text-orange-600">
-                        ({uniqueCount} unique values → will use label encoding instead of one-hot)
-                      </span>
-                    </li>
-                  );
-                })}
-              </ul>
-              <p className="text-xs text-orange-600 mt-2 font-medium">
-                💡 This is normal - your features will still be trained on as you selected.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-64 overflow-y-auto">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-h-64 overflow-y-auto">
         {availableFeatures.map((feature) => {
           const isSelected = selectedFeatures.includes(feature);
           const isRecommended = recommendations.includes(feature);
@@ -215,6 +184,37 @@ const FeatureSelection = ({
           );
         })}
       </div>
+
+      {/* High Cardinality Warning */}
+      {selectedHighCardinalityFeatures.length > 0 && (
+        <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
+          <div className="flex items-start">
+            <AlertTriangle className="h-4 w-4 text-orange-600 mt-0.5 mr-2 flex-shrink-0" />
+            <div>
+              <p className="text-sm font-medium text-orange-800">High Cardinality Features Selected</p>
+              <p className="text-xs text-orange-700 mt-1">
+                The following features have many unique values and will be automatically transformed:
+              </p>
+              <ul className="text-xs text-orange-700 mt-2 space-y-1">
+                {selectedHighCardinalityFeatures.map(feature => {
+                  const uniqueCount = getFeatureUniqueCount(feature);
+                  return (
+                    <li key={feature} className="flex items-center">
+                      <span className="font-medium">{feature}</span>
+                      <span className="ml-2 text-orange-600">
+                        ({uniqueCount} unique values → will use label encoding instead of one-hot)
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+              <p className="text-xs text-orange-600 mt-2 font-medium">
+                💡 This is normal - your features will still be trained on as you selected.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {recommendations.length > 0 && (
         <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
@@ -666,10 +666,10 @@ const DatasetConfigPage = () => {
                 {/* Preprocessing Preview */}
                 {selectedFeatures.length > 0 && profile && (
                   <div className="mt-4 pt-4 border-t border-blue-200">
-                    <h4 className="text-sm font-medium text-blue-900 mb-2">Preprocessing Preview:</h4>
+                    <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2">Preprocessing Preview:</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                       <div>
-                        <span className="font-medium text-blue-800">Numerical features:</span>
+                        <span className="font-medium text-blue-800 dark:text-blue-200">Numerical features:</span>
                         <div className="text-blue-700 mt-1">
                           {selectedFeatures.filter(feature => {
                             const column = profile.columns?.find(col => col.name === feature);
@@ -683,7 +683,7 @@ const DatasetConfigPage = () => {
                         </div>
                       </div>
                       <div>
-                        <span className="font-medium text-blue-800">Categorical features:</span>
+                        <span className="font-medium text-blue-800 dark:text-blue-200">Categorical features:</span>
                         <div className="text-blue-700 mt-1">
                           {selectedFeatures.filter(feature => {
                             const column = profile.columns?.find(col => col.name === feature);
@@ -751,7 +751,7 @@ const DatasetConfigPage = () => {
                                 setProblemType(detectedType);
                               }
                             }}
-                            className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                            className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:text-gray-900"
                           >
                             <option value="">Select target column...</option>
                             {profile?.columns?.map((column) => (

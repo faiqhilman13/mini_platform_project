@@ -29,12 +29,13 @@ async def upload_file(
         "application/pdf", 
         "text/csv", 
         "application/json",
+        "text/plain",  # Added for text classifier temporary files
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",  # .xlsx
         "application/vnd.ms-excel"  # .xls
     ]
     
     # Also check file extension as content-type detection can be unreliable
-    allowed_extensions = [".pdf", ".csv", ".json", ".xlsx", ".xls"]
+    allowed_extensions = [".pdf", ".csv", ".json", ".txt", ".xlsx", ".xls"]
     file_extension = None
     if file.filename:
         file_extension = "." + file.filename.split(".")[-1].lower()

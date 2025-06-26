@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { FileText, MessagesSquare, Tags, Braces, ArrowRight } from 'lucide-react';
+import { FileText, MessagesSquare, Braces, ArrowRight } from 'lucide-react';
 import { PIPELINE_TYPES } from '../../utils/constants';
 import { PipelineType, FileType } from '../../types';
 import { Card, CardContent, CardFooter } from '../ui/Card';
@@ -30,7 +30,6 @@ const PipelineSelector = ({
     switch (iconName) {
       case 'FileText': return <FileText className="h-6 w-6" />;
       case 'MessagesSquare': return <MessagesSquare className="h-6 w-6" />;
-      case 'Tags': return <Tags className="h-6 w-6" />;
       case 'Braces': return <Braces className="h-6 w-6" />;
       default: return <FileText className="h-6 w-6" />;
     }
@@ -61,8 +60,9 @@ const PipelineSelector = ({
           onMouseLeave={() => setHoveredId(null)}
         >
           <Card 
-            className="h-full"
-            hoverable
+            className={`h-full ${
+              hoveredId === pipeline.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
+            }`}
           >
             <CardContent className="p-6">
               <div className="flex items-center">
@@ -70,7 +70,6 @@ const PipelineSelector = ({
                   "flex items-center justify-center w-12 h-12 rounded-lg",
                   pipeline.id === 'RAG_CHATBOT' ? 'bg-blue-100 text-blue-600' :
                   pipeline.id === 'SUMMARIZER' ? 'bg-purple-100 text-purple-600' :
-                  pipeline.id === 'TEXT_CLASSIFIER' ? 'bg-amber-100 text-amber-600' :
                   'bg-green-100 text-green-600'
                 )}>
                   {getIconComponent(pipeline.icon)}

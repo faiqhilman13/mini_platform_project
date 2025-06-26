@@ -47,7 +47,7 @@ const PipelineResultsPage = () => {
       );
     }
 
-            switch (pipelineRun.pipeline_type) {      case 'PDF_SUMMARIZER':
+    switch (pipelineRun.pipeline_type) {      case 'PDF_SUMMARIZER':
         return (
           <div className="space-y-4">
             <Card>
@@ -91,64 +91,6 @@ const PipelineResultsPage = () => {
                     </div>
                   </div>
                 )}
-              </CardContent>
-            </Card>
-          </div>
-        );
-
-      case 'TEXT_CLASSIFIER':
-        return (
-          <div className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Brain className="h-5 w-5 mr-2 text-blue-600" />
-                  Classification Results
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
-                    <div>
-                      <h4 className="font-medium text-gray-900">Predicted Category</h4>
-                      <p className="text-lg font-semibold text-blue-600">
-                        {pipelineRun.result.category || pipelineRun.result.prediction || 'Not available'}
-                      </p>
-                    </div>
-                    {pipelineRun.result.confidence && (
-                      <div className="text-right">
-                        <h4 className="font-medium text-gray-900">Confidence</h4>
-                        <p className="text-lg font-semibold text-green-600">
-                          {Math.round(pipelineRun.result.confidence * 100)}%
-                        </p>
-                      </div>
-                    )}
-                  </div>
-
-                  {pipelineRun.result.probabilities && (
-                    <div className="p-4 bg-gray-50 rounded-lg">
-                      <h4 className="font-medium text-gray-900 mb-3">All Category Probabilities</h4>
-                      <div className="space-y-2">
-                        {Object.entries(pipelineRun.result.probabilities).map(([category, probability]) => (
-                          <div key={category} className="flex items-center justify-between">
-                            <span className="text-sm text-gray-700">{category}</span>
-                            <div className="flex items-center space-x-2">
-                              <div className="w-24 bg-gray-200 rounded-full h-2">
-                                <div 
-                                  className="bg-blue-600 h-2 rounded-full" 
-                                  style={{ width: `${(probability as number) * 100}%` }}
-                                ></div>
-                              </div>
-                              <span className="text-sm font-medium text-gray-900">
-                                {Math.round((probability as number) * 100)}%
-                              </span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
               </CardContent>
             </Card>
           </div>

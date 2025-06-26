@@ -270,8 +270,8 @@ const DatasetPreview = ({
       <CardContent>
         {/* Statistics Panel */}
         {showStats && (
-          <div className="mb-4 p-4 bg-gray-50 rounded-lg">
-            <h4 className="text-sm font-medium text-gray-900 mb-3">Column Statistics</h4>
+          <div className="mb-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+            <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">Column Statistics</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {displayColumns.map((column) => {
                 const analysis = columnAnalysis[column];
@@ -279,22 +279,22 @@ const DatasetPreview = ({
                 
                 const stats = analysis.stats;
                 return (
-                  <div key={column} className="bg-white p-3 rounded border">
+                  <div key={column} className="bg-white dark:bg-gray-600 p-3 rounded border border-gray-200 dark:border-gray-500">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center space-x-2">
                         <span className={analysis.color}>
                           {analysis.icon}
                         </span>
-                        <span className="font-medium text-sm text-gray-900 truncate">
+                        <span className="font-medium text-sm text-gray-900 dark:text-gray-100 truncate">
                           {column}
                         </span>
                       </div>
-                      <span className="text-xs text-gray-500 capitalize">
+                      <span className="text-xs text-gray-500 dark:text-gray-400 capitalize">
                         {analysis.type}
                       </span>
                     </div>
                     
-                    <div className="space-y-1 text-xs text-gray-300">
+                    <div className="text-xs text-gray-600 dark:text-gray-300 space-y-1">
                       <div className="flex justify-between">
                         <span>Unique:</span>
                         <span>{stats.unique}</span>

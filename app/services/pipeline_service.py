@@ -10,11 +10,11 @@ from sqlmodel import Session, select
 
 from app.models.pipeline_models import PipelineRun, PipelineType, PipelineRunStatus, PipelineRunCreateResponse, PipelineRunStatusResponse
 from app.models.file_models import UploadedFileLog
+from app.core.config import settings
 
 # Import pipeline workflows
-from workflows.pipelines.rag_chatbot import process_document_rag_flow
 from workflows.pipelines.summarizer import run_pdf_summary_pipeline
-from workflows.pipelines.text_classifier import text_classification_flow
+from workflows.pipelines.rag_chatbot import process_document_rag_flow
 from workflows.pipelines.ml_training import ml_training_flow
 from workflows.pipelines.rag_utils import extract_text_from_pdf
 
@@ -82,18 +82,6 @@ def trigger_pipeline_flow(
             flow_result = run_pdf_summary_pipeline(pdf_path=file_path)
         elif pipeline_type == PipelineType.RAG_CHATBOT:
             flow_result = process_document_rag_flow(pdf_path=file_path, title=original_filename)
-        elif pipeline_type == PipelineType.TEXT_CLASSIFIER:
-            logger.info(f"Extracting text from PDF for Text Classifier: {file_path}")
-            extracted_pages_data = extract_text_from_pdf(file_path)
-            if not extracted_pages_data:
-                flow_result = {"status": "error", "message": "No text could be extracted from PDF for classification."}
-            else:
-                # extracted_pages_data is List[Tuple[str, int]], so extract just the text
-                full_text = "\n".join([page_content for page_content, _ in extracted_pages_data])
-                if not full_text.strip():
-                    flow_result = {"status": "error", "message": "Extracted text is empty, cannot classify."}
-                else:
-                    flow_result = text_classification_flow(text_content=full_text)
         elif pipeline_type == PipelineType.ML_TRAINING:
             logger.info(f"Running ML training for {file_path}")
             # For ML training, we need to extract config from pipeline_run config

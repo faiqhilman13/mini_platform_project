@@ -85,6 +85,12 @@ const HeroPage = () => {
               Upload
             </button>
             <button 
+              onClick={() => navigate('/ai')}
+              className="hover:text-indigo-500 transition-colors"
+            >
+              AI & LLM
+            </button>
+            <button 
               onClick={() => navigate('/ml')}
               className="hover:text-indigo-500 transition-colors"
             >

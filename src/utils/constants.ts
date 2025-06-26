@@ -1,18 +1,18 @@
 import { AlgorithmOption } from '../types';
 
-export const PIPELINE_TYPES = [  {    id: 'PDF_SUMMARIZER',    name: 'Summarizer',    description: 'Generate concise summaries from document content',    icon: 'FileText',    supportedFileTypes: ['pdf', 'text'],  },
+export const PIPELINE_TYPES = [
+  {
+    id: 'PDF_SUMMARIZER',
+    name: 'Summarizer',
+    description: 'Generate concise summaries from document content',
+    icon: 'FileText',
+    supportedFileTypes: ['pdf', 'text'],
+  },
   {
     id: 'RAG_CHATBOT',
     name: 'RAG Chatbot',
     description: 'Create a chat interface with document context awareness',
     icon: 'MessagesSquare',
-    supportedFileTypes: ['pdf', 'text'],
-  },
-  {
-    id: 'TEXT_CLASSIFIER',
-    name: 'Text Classifier',
-    description: 'Categorize document content into predefined classes',
-    icon: 'Tags',
     supportedFileTypes: ['pdf', 'text'],
   },
   {

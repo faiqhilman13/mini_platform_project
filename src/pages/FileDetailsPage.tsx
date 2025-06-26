@@ -136,18 +136,14 @@ const FileDetailsPage = () => {
     if (pipelineRun.status !== 'COMPLETED') return;
 
     switch (pipelineRun.pipeline_type) {
+      case 'PDF_SUMMARIZER':
+        return 'Summarizer';
       case 'RAG_CHATBOT':
-        navigate(`/chat/${pipelineRun.run_uuid}`);
-        break;
-            case 'PDF_SUMMARIZER':        // For now, let's show the results in the browser console and navigate to a status page        // In the future, we can create a dedicated summary view page        navigate(`/pipeline-results/${pipelineRun.run_uuid}`);        break;
-      case 'TEXT_CLASSIFIER':
-        navigate(`/pipeline-results/${pipelineRun.run_uuid}`);
-        break;
+        return 'RAG Chatbot';
       case 'ML_TRAINING':
-        navigate(`/ml/results/${pipelineRun.run_uuid}`);
-        break;
+        return 'ML Training';
       default:
-        console.log('Pipeline results:', pipelineRun);
+        return pipelineRun.pipeline_type;
     }
   };
 

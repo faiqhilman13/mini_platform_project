@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Brain, Upload, Database, BarChart3, Settings2, Sun, Moon } from 'lucide-react';
+import { Brain, Upload, Database, BarChart3, Settings2, Sun, Moon, Bot } from 'lucide-react';
 import { cn } from '../../utils/helpers';
 import { useTheme } from '../../contexts/ThemeContext';
 import Button from '../ui/Button';
@@ -8,6 +8,7 @@ import Button from '../ui/Button';
 const navigation = [
   { name: 'Upload', href: '/upload', icon: <Upload className="h-4 w-4" /> },
   { name: 'Files', href: '/files', icon: <Database className="h-4 w-4" /> },
+  { name: 'AI & LLM', href: '/ai', icon: <Bot className="h-4 w-4" /> },
   { name: 'ML Training', href: '/ml', icon: <Brain className="h-4 w-4" /> },
   { name: 'Results', href: '/results', icon: <BarChart3 className="h-4 w-4" /> },
 ];

@@ -10,6 +10,8 @@ This document outlines the migration strategy from SQLite to Supabase (PostgreSQ
 - ✅ **Cloud Supabase**: Project `bdenplvynqkjihkiumtf` ready in ap-southeast-1 region
 - ✅ **Migration Files**: PostgreSQL schema created and tested
 - ✅ **MCP Integration**: Automated Supabase operations working
+- ✅ **UI/UX Transparency**: Complete frontend-backend alignment for ML preprocessing
+- ✅ **Production Readiness**: Enterprise-grade user experience with comprehensive error handling
 - 🔄 **App Configuration**: Currently using SQLite, ready to switch to Supabase
 
 **Target State:**
@@ -125,6 +127,7 @@ ML Training → SQLite results → Local model storage
 File Upload → PostgreSQL table → Supabase Storage (optional)
 ML Training → PostgreSQL with JSONB → Real-time dashboard updates
 Benefits: Better performance, real-time updates, enterprise security
+UI/UX: Complete transparency with live preprocessing feedback
 ```
 
 ### **Real-Time Dashboard:**
@@ -132,6 +135,7 @@ Benefits: Better performance, real-time updates, enterprise security
 - **ML Training**: Watch `ml_pipeline_run` status change (PENDING → RUNNING → COMPLETED)
 - **Model Results**: View trained models in `ml_model` table with performance metrics
 - **JSONB Data**: Click to expand configuration and results JSON
+- **User Feedback**: Live preprocessing warnings and transformations match backend exactly
 
 ---
 

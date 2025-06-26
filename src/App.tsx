@@ -11,6 +11,7 @@ import MLResultsPage from './pages/MLResultsPage';
 import FileDetailsPage from './pages/FileDetailsPage';
 import ChatPage from './pages/ChatPage';
 import PipelineResultsPage from './pages/PipelineResultsPage';
+import AIPage from './pages/AIPage';
 
 // Import proper page components
 import FilesListPage from './pages/FilesListPage';
@@ -49,6 +50,14 @@ function App() {
                 <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
                   <FileDetailsPage />
                 </main>
+              </>
+            } />
+            
+            {/* AI & LLM Page */}
+            <Route path="/ai" element={
+              <>
+                <Header />
+                <AIPage />
               </>
             } />
             
